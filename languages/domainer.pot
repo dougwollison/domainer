@@ -1,0 +1,1 @@
+# Use WordPress makepot.php utility to generate
