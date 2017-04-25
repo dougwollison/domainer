@@ -26,7 +26,18 @@ final class Domain extends Model {
 	// =========================
 
 	/**
-	 * The full domain name (sans WWW).
+	 * The database ID of the domain.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 *
+	 * @var int
+	 */
+	public $id = '';
+
+	/**
+	 * The full domain name.
 	 *
 	 * @since 1.0.0
 	 *
