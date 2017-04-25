@@ -36,17 +36,6 @@ final class Registry {
 	protected static $__loaded = false;
 
 	/**
-	 * The domain directory.
-	 *
-	 * @internal
-	 *
-	 * @since 1.0.0
-	 *
-	 * @var array
-	 */
-	private static $domains;
-
-	/**
 	 * The options storage array
 	 *
 	 * @internal
