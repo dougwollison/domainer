@@ -43,14 +43,14 @@ final class Installer extends Handler {
 	/**
 	 * Register the plugin hooks.
 	 *
-	 * @uses NL_PLUGIN_FILE to identify the plugin file.
+	 * @uses DOMAINER_PLUGIN_FILE to identify the plugin file.
 	 * @uses Installer::plugin_activate() as the activation hook.
 	 * @uses Installer::plugin_deactivate() as the deactivation hook.
 	 */
 	public static function register_hooks() {
 		// Plugin hooks
-		register_activation_hook( NL_PLUGIN_FILE, array( __CLASS__, 'plugin_activate' ) );
-		register_deactivation_hook( NL_PLUGIN_FILE, array( __CLASS__, 'plugin_deactivate' ) );
+		register_activation_hook( DOMAINER_PLUGIN_FILE, array( __CLASS__, 'plugin_activate' ) );
+		register_deactivation_hook( DOMAINER_PLUGIN_FILE, array( __CLASS__, 'plugin_deactivate' ) );
 
 		// Upgrade logic
 		self::add_hook( 'plugins_loaded', 'upgrade', 10, 0 );
