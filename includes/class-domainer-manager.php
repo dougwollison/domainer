@@ -52,7 +52,7 @@ final class Manager extends Handler {
 		}
 
 		// Settings & Pages
-		self::add_hook( 'admin_menu', 'add_menu_pages' );
+		self::add_hook( 'network_admin_menu', 'add_menu_pages' );
 		self::add_hook( 'admin_init', 'register_settings' );
 	}
 
@@ -77,12 +77,12 @@ final class Manager extends Handler {
 	public static function add_menu_pages() {
 		// Main Options page
 		$options_page_hook = add_menu_page(
-			__( 'Domainer Options', 'domainer' ), // page title
-			_x( 'Domainer', 'menu title', 'domainer' ), // menu title
+			__( 'Domain Management Options', 'domainer' ), // page title
+			_x( 'Domains', 'menu title', 'domainer' ), // menu title
 			'manage_options', // capability
 			'domainer-options', // slug
 			array( get_called_class(), 'settings_page' ), // callback
-			'dashicons-admin-generic', // icon
+			'dashicons-networking', // icon
 			90 // Postion; after settings
 		);
 
