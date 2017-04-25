@@ -38,6 +38,39 @@ function is_backend() {
 }
 
 // =========================
+// ! Helper Utilities
+// =========================
+
+/**
+ * Return the true domain+path of a site.
+ *
+ * @internal
+ *
+ * @since 1.0.0
+ *
+ * @global WP_Site $current_blog The current site object.
+ *
+ * @param int $blog_id Optional. The specific site to fetch.
+ *
+ * @return string The domain + path, unslashed.
+ */
+function get_true_url( $blog_id = null ) {
+	if ( is_null( $blog_id ) ) {
+		global $current_blog;
+
+		$domain = $current_blog->true_domain ?: $current_blog->domain;
+		$path = $current_blog->true_path ?: $current_blog->path;
+	} else {
+		$blog = WP_Site::get_instance( $blog_id );
+
+		$domain = $blog->domain;
+		$path = $blog->path;
+	}
+
+	return trim( $domain . $path, '/' );
+}
+
+// =========================
 // ! Misc. Utilities
 // =========================
 

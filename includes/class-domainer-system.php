@@ -79,6 +79,77 @@ final class System extends Handler {
 	 * @since 1.0.0
 	 */
 	public static function register_hooks() {
-		// to be written
+		// URL Rewriting (if applicable).
+		if ( defined( 'DOMAINER_REWRITTEN' ) ) {
+			self::add_hook( 'option_siteurl', 'rewrite_domain_in_url', 0, 1 );
+			self::add_hook( 'option_home', 'rewrite_domain_in_url', 0, 1 );
+
+			self::add_hook( 'plugins_url', 'rewrite_domain_in_url', 0, 1 );
+			self::add_hook( 'theme_root_uri', 'rewrite_domain_in_url', 0, 1 );
+			self::add_hook( 'stylesheet_uri', 'rewrite_domain_in_url', 0, 1 );
+			self::add_hook( 'stylesheet_directory_uri', 'rewrite_domain_in_url', 0, 1 );
+			self::add_hook( 'template_directory_uri', 'rewrite_domain_in_url', 0, 1 );
+			self::add_hook( 'get_the_guid', 'rewrite_domain_in_url', 0, 1 );
+
+			self::add_hook( 'the_content', 'rewrite_domain_in_content', 0, 1 );
+			self::add_hook( 'the_excerpt', 'rewrite_domain_in_content', 0, 1 );
+
+			self::add_hook( 'upload_dir', 'rewrite_domain_in_upload_dir', 0, 1 );
+		}
+	}
+
+	// =========================
+	// ! Domain Rewriting
+	// =========================
+
+	/**
+	 * Filter the URL to replace the domain name.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $url The URL to rewrite.
+	 *
+	 * @return string The filtered URL.
+	 */
+	public static function rewrite_domain_in_url( $url ) {
+		global $current_blog;
+
+		$url = str_replace( get_true_url(), $current_blog->domain, $url );
+
+		return $url;
+	}
+
+	/**
+	 * Filter the content to replace the domain name.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $url The content to filter.
+	 *
+	 * @return string The filtered content.
+	 */
+	public static function rewrite_domain_in_content( $content ) {
+		global $current_blog;
+
+		// Only replace instances prefixed with a double slash, to prevent it affecting email addresses
+		$content = str_replace( '//' . get_true_url(), '//' . $current_blog->domain, $content );
+
+		return $content;
+	}
+
+	/**
+	 * Filter the upload_dir array to replace the domain name.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $upload_dir The array to filter.
+	 *
+	 * @return array The filtered array.
+	 */
+	public static function rewrite_domain_in_upload_dir( $upload_dir ) {
+		$upload_dir['baseurl'] = self::rewrite_domain_in_url( $upload_dir['baseurl'] );
+		$upload_dir['url'] = self::rewrite_domain_in_url( $upload_dir['url'] );
+
+		return $upload_dir;
 	}
 }
