@@ -54,13 +54,14 @@ final class Sunrise {
 		$find = preg_replace( '/^www\./', '', $domain );
 
 		// See if a matching site ID can be found for the provided HOST name
-		$match = $wpdb->get_var( $wpdb->prepare( "SELECT blog_id FROM $wpdb->domainer WHERE domain = %s", $find ) );
+		$match = $wpdb->get_var( $wpdb->prepare( "SELECT id, blog_id FROM $wpdb->domainer WHERE domain = %s LIMIT 1", $find ) );
 		if ( $match ) {
 			// Ensure a matching site is found
-			if ( $current_blog = \WP_Site::get_instance( $match ) ) {
-				// Store the true domain/path
+			if ( $current_blog = \WP_Site::get_instance( $match->blog_id ) ) {
+				// Store the true domain/path, along with the requested domain's ID
 				$current_blog->true_domain = $current_blog->domain;
 				$current_blog->true_path = $current_blog->path;
+				$current_blog->domain_id = $match->id;
 
 				// Rewrite the domain/path
 				$current_blog->domain = $domain;
