@@ -208,27 +208,71 @@ final class Registry {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $name  The domain name to fetch.
-	 * @param string $field Optional. A specific field to return.
+	 * @global \wpdb $wpdb The database abstraction class instance.
 	 *
-	 * @return mixed The domain or the value of the domain's field.
+	 * @param int|string $id_or_name The ID or name of the domain.
+	 *
+	 * @return Domain The domain object, FALSE if not found.
 	 */
-	public static function get_domain( $name, $field = null ) {
-		// Sanitize the name
-		$name = Domain::sanitize( $name );
+	public static function get_domain( $id_or_name ) {
+		global $wpdb;
 
-		// See if the domain is registered
-		if ( isset( $domains[ $name ] ) ) {
-			$domain = $this->domains[ $name ];
-
-			if ( is_null( $field ) ) {
-				return $domain;
-			}
-
-			return $domain->$field;
+		$field = 'name';
+		if ( is_numeric( $id_or_name ) ) {
+			$field = 'id';
 		}
 
-		return false;
+		// Check if it's cached, return if so
+		$cached = wp_cache_get( "{$field}:{$id_or_name}", 'domainer:domain', false, $found );
+		if ( $found ) {
+			return $cached;
+		}
+
+		$result = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->domainer WHERE $field = %s LIMIT 1", $id_or_name ), ARRAY_A );
+		if ( ! $result ) {
+			return false;
+		}
+
+		$domain = new Domain( $result );
+
+		// Cache both ways of finding the domain
+		wp_cache_set( "id:{$domain->id}", $domain, 'domainer:domain' );
+		wp_cache_set( "name:{$domain->name}", $domain, 'domainer:domain' );
+
+		return $domain;
+	}
+
+	/**
+	 * Get the primary domain for a site.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
+	 *
+	 * @param int $blog_id The ID of the site to fetch for.
+	 *
+	 * @return Domain The domain object, FALSE if not found.
+	 */
+	public static function get_primary_domain( $blog_id ) {
+		global $wpdb;
+
+		// Check if it's cached, return if so
+		$cached = wp_cache_get( $blog_id, 'domainer:primary', false, $found );
+		if ( $found ) {
+			return $cached;
+		}
+
+		$result = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->domainer WHERE blog_id = %d AND type = 'primary' LIMIT 1", $blog_id ), ARRAY_A );
+		if ( ! $result ) {
+			return false;
+		}
+
+		$domain = new Domain( $result );
+
+		// Cache the result
+		wp_cache_set( $blog_id, $domain, 'domainer:primary' );
+
+		return $domain;
 	}
 
 	// =========================
