@@ -76,13 +76,14 @@ final class Manager extends Handler {
 	 */
 	public static function add_menu_pages() {
 		// Main Options page
-		$options_page_hook = add_utility_page(
+		$options_page_hook = add_menu_page(
 			__( 'Domainer Options', 'domainer' ), // page title
 			_x( 'Domainer', 'menu title', 'domainer' ), // menu title
 			'manage_options', // capability
 			'domainer-options', // slug
 			array( get_called_class(), 'settings_page' ), // callback
-			'dashicons-admin-generic' // icon
+			'dashicons-admin-generic', // icon
+			90 // Postion; after settings
 		);
 
 		// Setup the help tabs for each page
