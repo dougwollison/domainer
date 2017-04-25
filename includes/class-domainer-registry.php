@@ -36,6 +36,17 @@ final class Registry {
 	protected static $__loaded = false;
 
 	/**
+	 * The domain directory.
+	 *
+	 * @internal
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var array
+	 */
+	private static $domains;
+
+	/**
 	 * The options storage array
 	 *
 	 * @internal
@@ -189,6 +200,38 @@ final class Registry {
 	}
 
 	// =========================
+	// ! Domain Accessing
+	// =========================
+
+	/**
+	 * Get the info for a domain.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $name  The domain name to fetch.
+	 * @param string $field Optional. A specific field to return.
+	 *
+	 * @return mixed The domain or the value of the domain's field.
+	 */
+	public static function get_domain( $name, $field = null ) {
+		// Sanitize the name
+		$name = Domain::sanitize( $name );
+
+		// See if the domain is registered
+		if ( isset( $domains[ $name ] ) ) {
+			$domain = $this->domains[ $name ];
+
+			if ( is_null( $field ) ) {
+				return $domain;
+			}
+
+			return $domain->$field;
+		}
+
+		return false;
+	}
+
+	// =========================
 	// ! Setup Method
 	// =========================
 
@@ -223,18 +266,39 @@ final class Registry {
 			self::set( $option, $value );
 		}
 
+		$domains = get_option( 'domainer_domains', array() );
+		foreach ( $domains as $name => $config ) {
+			$config['name'] = $name;
+			$this->domains[ $name ] = new Domain( $config );
+		}
+
 		// Flag that we've loaded everything
 		self::$__loaded = true;
 	}
 
 	/**
-	 * Save the options and languages to the database.
+	 * Save the options and domains to the database.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $what Optional. Save just options/languages or both (true)?
+	 * @param string $what Optional. Save just options/domains or both (true)?
 	 */
 	public static function save( $what = true ) {
-		update_option( 'domainer_options', self::$options );
+		if ( $what == 'options' ) {
+			// Save the options
+			update_option( 'domainer_options', self::$options );
+		}
+
+		if ( $what == 'domains' ) {
+			$domains = array();
+			foreach ( $this->domains as $domain => $object ) {
+				$config = $object->dump();
+				unset( $config['name'] );
+				$domains[ $domain ] = $config;
+			}
+
+			// Save the domains
+			update_option( 'domainer_domains', $domains );
+		}
 	}
 }
