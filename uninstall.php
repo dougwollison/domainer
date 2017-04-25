@@ -68,4 +68,4 @@ final class Uninstaller {
 	}
 }
 
-Domainer\Uninstaller::run();
+Uninstaller::run();
