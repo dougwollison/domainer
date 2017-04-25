@@ -58,6 +58,12 @@ final class Sunrise {
 		if ( $match ) {
 			// Ensure a matching site is found
 			if ( $current_blog = \WP_Site::get_instance( $match->blog_id ) ) {
+				// Amend the REQUEST_URI to remove the site's original path
+				$path = rtrim( $current_blog->path, '/' );
+				if ( $path && strpos( $_SERVER['REQUEST_URI'], $path ) === 0 ) {
+					$_SERVER['REQUEST_URI'] = substr( $_SERVER['REQUEST_URI'], strlen( $path ) );
+				}
+
 				// Store the true domain/path, along with the requested domain's ID
 				$current_blog->true_domain = $current_blog->domain;
 				$current_blog->true_path = $current_blog->path;
