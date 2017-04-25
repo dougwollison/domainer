@@ -34,6 +34,15 @@ define( 'DOMAINER_PLUGIN_FILE', __FILE__ );
  */
 define( 'DOMAINER_PLUGIN_DIR', dirname( DOMAINER_PLUGIN_FILE ) );
 
+/**
+ * Identifies the current database version.
+ *
+ * @since 1.0.0
+ *
+ * @var string
+ */
+define( 'DOMAINER_DB_VERSION', '2.0.0' );
+
 // =========================
 // ! Includes
 // =========================

@@ -142,10 +142,38 @@ final class Installer extends Handler {
 	 *
 	 * @uses Registry::get_defaults() to get the default option values.
 	 */
-	protected static function install() {
+	private static function install_options() {
 		// Default options
 		$default_options = Registry::get_defaults();
 		add_option( 'domainer_options', $default_options );
+	}
+
+	/**
+	 * Install/upgrade the domain table.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @global wpdb $wpdb The database abstraction class instance.
+	 */
+	private static function install_tables() {
+		global $wpdb;
+
+		// Load dbDelta utility
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+		$charset_collate = $wpdb->get_charset_collate();
+
+		// Just install/update the translations table as normal
+		$sql_domainer = "CREATE TABLE $wpdb->domainer (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			domain varchar(253) DEFAULT '' NOT NULL,
+			blog_id bigint(20) unsigned NOT NULL,
+			active tinyint(1) DEFAULT '1' NOT NULL,
+			type enum('primary','redirect','alias') DEFAULT 'redirect' NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY domain (domain)
+		) $charset_collate;";
+		dbDelta( $sql_domainer );
 	}
 
 	// =========================
@@ -160,6 +188,19 @@ final class Installer extends Handler {
 	 * @return bool Wether or not an upgrade was performed.
 	 */
 	public static function upgrade() {
-		// to be written
+		global $wpdb;
+
+		// Abort if the site is using the latest version
+		if ( version_compare( get_option( 'domainer_database_version', '1.0.0' ), DOMAINER_DB_VERSION, '>=' ) ) {
+			return false;
+		}
+
+		// Install/update the tables
+		self::install_tables();
+
+		// Add the default options
+		self::install_options();
+
+		return true;
 	}
 }

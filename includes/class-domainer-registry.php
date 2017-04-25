@@ -266,12 +266,6 @@ final class Registry {
 			self::set( $option, $value );
 		}
 
-		$domains = get_option( 'domainer_domains', array() );
-		foreach ( $domains as $name => $config ) {
-			$config['name'] = $name;
-			$this->domains[ $name ] = new Domain( $config );
-		}
-
 		// Flag that we've loaded everything
 		self::$__loaded = true;
 	}
@@ -284,21 +278,7 @@ final class Registry {
 	 * @param string $what Optional. Save just options/domains or both (true)?
 	 */
 	public static function save( $what = true ) {
-		if ( $what == 'options' ) {
-			// Save the options
-			update_option( 'domainer_options', self::$options );
-		}
-
-		if ( $what == 'domains' ) {
-			$domains = array();
-			foreach ( $this->domains as $domain => $object ) {
-				$config = $object->dump();
-				unset( $config['name'] );
-				$domains[ $domain ] = $config;
-			}
-
-			// Save the domains
-			update_option( 'domainer_domains', $domains );
-		}
+		// Save the options
+		update_option( 'domainer_options', self::$options );
 	}
 }
