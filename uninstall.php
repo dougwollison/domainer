@@ -4,7 +4,7 @@
  *
  * @package Domainer
  *
- * @since 2.3.0
+ * @since 1.0.0
  */
 
 namespace Domainer;
@@ -16,7 +16,7 @@ namespace Domainer;
  *
  * @internal Automatically called within this file.
  *
- * @since 2.0.0
+ * @since 1.0.0
  */
 final class Uninstaller {
 	/**
@@ -24,7 +24,7 @@ final class Uninstaller {
 	 *
 	 * Will check for Multisite and run uninstall() for each blog.
 	 *
-	 * @since 2.3.0
+	 * @since 1.0.0
 	 */
 	public static function run() {
 		// Abort if not running in the WordPress context.
@@ -61,7 +61,7 @@ final class Uninstaller {
 	 *
 	 * Delete all tables and all options created by nLingual.
 	 *
-	 * @since 2.3.0
+	 * @since 1.0.0
 	 */
 	public static function uninstall() {
 		delete_option( 'domainer_options' );

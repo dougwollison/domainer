@@ -30,7 +30,7 @@ final class AJAX extends Handler {
 	 *
 	 * @internal Used by the Handler enable/disable methods.
 	 *
-	 * @since 2.6.0
+	 * @since 1.0.0
 	 *
 	 * @var array
 	 */
