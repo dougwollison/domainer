@@ -77,8 +77,20 @@ final class System extends Handler {
 	 * Register hooks.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
 	 */
 	public static function register_hooks() {
+		global $wpdb;
+
+		// Setup the domainer table alias
+		if ( ! $wpdb->domainer ) {
+			$wpdb->domainer = $wpdb->base_prefix . 'domainer';
+		}
+
+		// Primary Domain redirection
+		self::add_hook( 'wp', 'redirect_to_primary', 10, 0 );
+
 		// URL Rewriting (if applicable).
 		if ( defined( 'DOMAINER_REWRITTEN' ) ) {
 			self::add_hook( 'option_siteurl', 'rewrite_domain_in_url', 0, 1 );
@@ -91,10 +103,51 @@ final class System extends Handler {
 			self::add_hook( 'template_directory_uri', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'get_the_guid', 'rewrite_domain_in_url', 0, 1 );
 
+			self::add_hook( 'redirect_canonical', 'rewrite_domain_in_url', 10, 1 );
+
 			self::add_hook( 'the_content', 'rewrite_domain_in_content', 0, 1 );
 			self::add_hook( 'the_excerpt', 'rewrite_domain_in_content', 0, 1 );
 
 			self::add_hook( 'upload_dir', 'rewrite_domain_in_upload_dir', 0, 1 );
+		}
+	}
+
+	// =========================
+	// ! Primary Domain Handling
+	// =========================
+
+	/**
+	 * Redirect to the primary domain if applicable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @global WP_Site $current_blog The current site object.
+	 */
+	public static function redirect_to_primary() {
+		global $current_blog;
+
+		// Skip if not for a HEAD/GET request
+		if ( isset( $_SERVER['REQUEST_METHOD'] ) && ! in_array( strtoupper( $_SERVER['REQUEST_METHOD'] ), array( 'GET', 'HEAD' ) ) ) {
+			return;
+		}
+
+		// Get the domain if one was matched
+		if ( $current_blog->domain_id ) {
+			$domain = Registry::get_domain( $current_blog->domain_id );
+
+			// If the domain is found and is not a redirect, skip
+			if ( $domain && $domain->type !== 'redirect' ) {
+				return;
+			}
+		}
+
+		// Find a primary domain for this site
+		if ( $domain = Registry::get_primary_domain( $current_blog->blog_id ) ) {
+			// Build the rewritten URL
+			$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain->name . $_SERVER['REQUEST_URI'];
+			if ( wp_redirect( $redirect_url, 302 ) ) {
+				exit;
+			}
 		}
 	}
 
