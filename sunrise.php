@@ -58,8 +58,11 @@ final class Sunrise {
 		if ( $match ) {
 			// Ensure a matching site is found
 			if ( $current_blog = \WP_Site::get_instance( $match ) ) {
-				// Rewrite the site's domain/path, add store the true domain
+				// Store the true domain/path
 				$current_blog->true_domain = $current_blog->domain;
+				$current_blog->true_path = $current_blog->path;
+
+				// Rewrite the domain/path
 				$current_blog->domain = $domain;
 				$current_blog->path = '/';
 
@@ -69,6 +72,9 @@ final class Sunrise {
 				// Populate the site/network ID globals
 				$blog_id = $current_blog->blog_id;
 				$site_id = $current_blog->site_id;
+
+				// Flag that Domainer rewrote the domain
+				define( 'DOMAINER_REWRITTEN', true );
 
 				// Set the cookie domain constant
 				define( 'COOKIE_DOMAIN', $domain );
