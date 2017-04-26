@@ -58,6 +58,12 @@ final class Registry {
 	protected static $options_whitelist = array(
 		// - The permanent redirection option
 		'redirection_permanent' => false,
+
+		// - The rewrite backend option
+		'redirect_backend' => false,
+
+		// - The no-rewrite for users option
+		'no_redirect_users' => false,
 	);
 
 	/**

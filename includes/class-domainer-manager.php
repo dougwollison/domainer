@@ -270,6 +270,16 @@ final class Manager extends Handler {
 				'help'  => __( 'Use "permanent" (HTTP 301) instead of "temporary" (HTTP 302) redirects?', 'domainer' ),
 				'type'  => 'checkbox',
 			),
+			'redirect_backend' => array(
+				'title' => __( 'Redirect Backend URLs?', 'domainer' ),
+				'help'  => __( 'Force the backend to run behind the primary domain.', 'domainer' ),
+				'type'  => 'checkbox',
+			),
+			'no_redirect_users' => array(
+				'title' => __( 'No Redirection for Users?', 'domainer' ),
+				'help'  => __( 'Allow logged in users to view the site on it’s original domain?', 'domainer' ),
+				'type'  => 'checkbox',
+			),
 		);
 
 		// Add the section and fields
