@@ -24,6 +24,19 @@ namespace Domainer;
  */
 abstract class Model {
 	/**
+	 * Create an instance from an array.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $values The property values.
+	 *
+	 * @return object A new instance of the called class.
+	 */
+	public static function create_instance( $values ) {
+		return new static( $values );
+	}
+
+	/**
 	 * Setup the property values.
 	 *
 	 * @since 1.0.0
