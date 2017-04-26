@@ -2,7 +2,7 @@
 Contributors: dougwollison
 Tags: domain mapping, domain management, multisite
 Requires at least: 4.0
-Tested up to: 4.4.2
+Tested up to: 4.7.4
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -17,6 +17,10 @@ Coming soon.
 
 1. Upload the contents of `domainer.tar.gz` to your `/wp-content/plugins/` directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
+3. Assuming the system is unable to take care of it automatically:
+	1. Copy the sunrise.php file to `/wp-content/`.
+	2. Add `define('SUNRISE', true);` to your `wp-config.php` file, anywhere above the `ABSPATH` line.
+4. Start adding domains under Network Admin > Domains.
 
 == Changelog ==
 
