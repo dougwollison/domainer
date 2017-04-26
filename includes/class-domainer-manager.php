@@ -53,7 +53,14 @@ final class Manager extends Handler {
 
 		// Settings & Pages
 		self::add_hook( 'network_admin_menu', 'add_menu_pages' );
+		self::add_hook( 'admin_init', 'setup_domain_fields' );
 		self::add_hook( 'admin_init', 'setup_options_fields' );
+
+		// Action Handling
+		self::add_hook( 'admin_post_domainer-update', 'update_domain' );
+		self::add_hook( 'admin_post_domainer-disable', 'disable_domain' );
+		self::add_hook( 'admin_post_domainer-enable', 'enable_domain' );
+		self::add_hook( 'admin_post_domainer-delete', 'delete_domain' );
 		self::add_hook( 'admin_post_domainer-options', 'save_options' );
 	}
 
@@ -109,6 +116,127 @@ final class Manager extends Handler {
 	// =========================
 
 	/**
+	 * Update a domain.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function update_domain() {
+		global $wpdb;
+
+		if ( ! isset( $_POST['domainer_domain'] ) || ! check_admin_referer( 'edit-domainer-' . $_POST['domain_id'] ) ) {
+			cheatin();
+			exit;
+		}
+
+		if ( $_POST['domain_id'] == 'new' ) {
+			$wpdb->insert( $wpdb->domainer, $_POST['domainer_domain'] );
+			$success_message = __( 'Domain added.', 'domainer' );
+		} else {
+			$wpdb->update( $wpdb->domainer, $_POST['domainer_domain'], array(
+				'id' => $_POST['domain_id'],
+			) );
+			$success_message = __( 'Domain updated.', 'domainer' );
+		}
+
+		if ( $wpdb->last_error ) {
+			add_settings_error(
+				'domainer',
+				'domainer_wpdb',
+				sprintf( _x( 'Unexpected error updating domain: %s', 'domainer' ), $wpdb->last_error ),
+				'error'
+			);
+		}
+
+		// Check for setting errors; add the "updated" message if none are found
+		if ( ! count( get_settings_errors() ) ) {
+			add_settings_error( 'domainer', 'settings_updated', $success_message, 'updated' );
+		}
+		set_transient( 'settings_errors', get_settings_errors(), 30 );
+
+		wp_redirect( admin_url( 'network/admin.php?page=domainer&settings-updated=true' ) );
+		exit;
+	}
+
+	/**
+	 * Handle a domain action (disable, enable, delete).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $action The action to perform.
+	 * @param string $message The update message on success.
+	 */
+	protected static function handle_domain_action( $action, $message ) {
+		global $wpdb;
+
+		if ( ! isset( $_REQUEST['domain_id'] ) || ! check_admin_referer( $action . '-' . $_REQUEST['domain_id'] ) ) {
+			cheatin();
+			exit;
+		}
+
+		switch ( $action ) {
+			case 'disable':
+			case 'enable':
+				$wpdb->update( $wpdb->domainer, array(
+					'active' => $action == 'enable',
+				), array(
+					'id' => $_REQUEST['domain_id'],
+				) );
+				break;
+
+			case 'delete':
+				$wpdb->delete( $wpdb->domainer, array(
+					'id' => $_REQUEST['domain_id'],
+				) );
+				break;
+		}
+
+		if ( $wpdb->last_error ) {
+			add_settings_error(
+				'domainer',
+				'domainer_wpdb',
+				sprintf( _x( 'Unexpected error updating domain: %s', 'domainer' ), $wpdb->last_error ),
+				'error'
+			);
+		}
+
+		// Check for setting errors; add the "updated" message if none are found
+		if ( ! count( get_settings_errors() ) ) {
+			add_settings_error( 'domainer', 'settings_updated', $message, 'updated' );
+		}
+		set_transient( 'settings_errors', get_settings_errors(), 30 );
+
+		wp_redirect( admin_url( 'network/admin.php?page=domainer&settings-updated=true' ) );
+		exit;
+	}
+
+	/**
+	 * Disable a domain.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function disable_domain() {
+		self::handle_domain_action( 'disable', __( 'Domain disabled.', 'domainer' ) );
+	}
+
+	/**
+	 * Enable a domain.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function enable_domain() {
+		self::handle_domain_action( 'enable', __( 'Domain enabled.', 'domainer' ) );
+	}
+
+	/**
+	 * Delete a domain.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function delete_domain() {
+		self::handle_domain_action( 'delete', __( 'Domain deleted.', 'domainer' ) );
+	}
+
+	/**
 	 * Save the options.
 	 *
 	 * @since 1.0.0
@@ -131,7 +259,11 @@ final class Manager extends Handler {
 
 		update_site_option( 'domainer_options', $options );
 
-		wp_redirect( admin_url( 'network/admin.php?page=domainer-options' ) );
+		// Add an "updated" message
+		add_settings_error( 'domainer-options', 'settings_updated', __( 'Options updated.', 'domainer' ), 'updated' );
+		set_transient( 'settings_errors', get_settings_errors(), 30 );
+
+		wp_redirect( admin_url( 'network/admin.php?page=domainer-options&settings-updated=true' ) );
 		exit;
 	}
 
@@ -140,7 +272,52 @@ final class Manager extends Handler {
 	// =========================
 
 	/**
-	 * Fields for the Translations page.
+	 * Fields for the domain editor page.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function setup_domain_fields() {
+		$sites = get_sites();
+		$site_options = array();
+		foreach ( $sites as $site ) {
+			$site_options[ $site->blog_id ] = $site->blogname;
+		}
+
+		/**
+		 * Domain Settings
+		 */
+		$domain_settings = array(
+			'name' => array(
+				'title' => __( 'Domain Name', 'domainer' ),
+				'help'  => __( 'The fully qualified domain name (leave out the www)', 'domainer' ),
+				'type'  => 'text',
+			),
+			'blog_id' => array(
+				'title' => __( 'Target Site', 'domainer' ),
+				'help'  => __( 'The site this domain will route to.', 'domainer' ),
+				'type'  => 'select',
+				'data'  => $site_options,
+			),
+			'type' => array(
+				'title' => __( 'Domain Type', 'domainer' ),
+				'help'  => __( 'Should redirection involving this domain be handled?', 'domainer' ),
+				'type'  => 'select',
+				'data'  => Documenter::domain_type_names(),
+			),
+			'active' => array(
+				'title' => __( 'Active?', 'domainer' ),
+				'help'  => __( 'Uncheck to keep this domain on file but ignore handling of it.', 'domainer' ),
+				'type'  => 'checkbox',
+			),
+		);
+
+		// Add the section and fields
+		add_settings_section( 'default', null, null, 'domainer-domain' );
+		Settings::add_fields( $domain_settings, 'domain' );
+	}
+
+	/**
+	 * Fields for the options page.
 	 *
 	 * @since 1.0.0
 	 */
@@ -176,24 +353,20 @@ final class Manager extends Handler {
 		global $plugin_page, $wpdb;
 ?>
 		<div class="wrap">
-			<?php if ( isset( $_GET['domain_id'] ) ) : ?>
-				<?php
-				$data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->domainer WHERE domain_id = %s", $_GET['domain_id'] ), ARRAY_A ) ?: array();
-				$domain = new Domain( $data );
-				?>
+			<?php if ( isset( $_GET['domain_id'] ) ) : $domain_id = $_GET['domain_id']; ?>
+				<?php $domain = Registry::get_domain( $domain_id ) ?: new Domain(); ?>
 
 				<?php if ( $_GET['domain_id'] == 'new' ) : ?>
 					<h2><?php _e( 'Add New Domain', 'domainer' ); ?></h2>
 				<?php else : ?>
-					<h2><?php printf( __( 'Edit Domain: <code>%s</code>', 'domainer' ), $domain->name ); ?></h2>
+					<h2><?php printf( __( 'Edit Domain: %s', 'domainer' ), $domain->name ); ?></h2>
 				<?php endif; ?>
 
 				<?php settings_errors(); ?>
-				<form method="post" action="<?php echo admin_url( 'admin-post.php?action=' . $plugin_page ); ?>" id="<?php echo $plugin_page; ?>-form">
-					<?php wp_nonce_field( "$plugin_page-edit" ); ?>
-
-					<?php print_r($domain); ?>
-
+				<form method="post" action="<?php echo admin_url( 'admin-post.php?action=domainer-update' ); ?>" id="<?php echo $plugin_page; ?>-form">
+					<?php wp_nonce_field( 'edit-domainer-' . $domain_id ); ?>
+					<input type="hidden" name="domain_id" value="<?php echo $domain_id; ?>">
+					<?php do_settings_sections( 'domainer-domain' ); ?>
 					<?php submit_button(); ?>
 				</form>
 			<?php else : ?>
@@ -205,47 +378,51 @@ final class Manager extends Handler {
 				<?php
 				$domains = $wpdb->get_results( "SELECT * FROM $wpdb->domainer", ARRAY_A );
 				$domains = array_map( __NAMESPACE__ . '\Domain::create_instance', $domains );
+
+				$domain_types = Documenter::domain_type_names();
 				?>
 
+				<br>
+
+				<?php settings_errors(); ?>
 				<table id="domainer_domains" class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
-							<td id="cb" class="manage-column column-cb check-column">
-								<label for="cb-select-all-1" class="screen-reader-text"><?php _e( 'Select All' ); ?></label>
-								<input type="checkbox" id="cb-select-all-1">
-							</td>
-							<th scope="col" class="domainer-domain-name"><?php _ex( 'Name', 'domain detail', 'domainer' ); ?></th>
-							<th scope="col" class="domainer-domain-blog"><?php _ex( 'Site', 'domain detail', 'domainer' ); ?></th>
-							<th scope="col" class="domainer-domain-type"><?php _ex( 'Type', 'domain detail', 'domainer' ); ?></th>
-							<th scope="col" class="domainer-domain-status"><?php _ex( 'Status', 'domain detail', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-name"><?php _ex( 'Name', 'domain field', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-blog"><?php _ex( 'Site', 'domain field', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-type"><?php _ex( 'Type', 'domain field', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-status"><?php _ex( 'Status', 'domain field', 'domainer' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach ( $domains as $domain ) : ?>
+						<?php foreach ( $domains as $domain ) :
+							$type = $domain_types[ $domain->type ];
+
+							$site_url = get_blog_option( $domain->blog_id, 'home' );
+							$site_name = get_blog_option( $domain->blog_id, 'blogname' );
+						?>
 							<tr>
-								<th scope="row" class="check-column">
-									<label class="screen-reader-text" for="domain_<?php echo $domain->id; ?>"><?php printf( __( 'Select %s', 'domainer' ), $domain->name ); ?></label>
-									<input type="checkbox" id="domain_<?php echo $domain->id; ?>" name="alldomains[]" value="<?php echo $domain->id; ?>">
-								</th>
-								<td class="domainer-domain-name" data-colname="<?php _ex( 'Name', 'domain detail', 'domainer' ); ?>"><?php echo $domain->name; ?></td>
-								<td class="domainer-domain-blog" data-colname="<?php _ex( 'Site', 'domain detail', 'domainer' ); ?>"><?php echo $domain->blog_id; ?></td>
-								<td class="domainer-domain-type" data-colname="<?php _ex( 'Type', 'domain detail', 'domainer' ); ?>"><?php echo $domain->type; ?></td>
-								<td class="domainer-domain-status" data-colname="<?php _ex( 'Status', 'domain detail', 'domainer' ); ?>"><?php echo $domain->active; ?></td>
+								<td class="domainer-domain-name" data-colname="<?php _ex( 'Name', 'domain field', 'domainer' ); ?>">
+									<a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id='. $domain->id ); ?>"><?php echo $domain->name; ?></a>
+									<div class="row-actions">
+										<span class="edit"><a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id='. $domain->id ); ?>"><?php _ex( 'Edit', 'domain action', 'domainer' ); ?></a> | </span>
+
+										<?php if ( $domain->active ) : ?>
+											<span class="disable"><a href="<?php echo wp_nonce_url( admin_url( 'admin-post.php?action=domainer-disable&domain_id=' . $domain->id ), 'disable-' . $domain->id ); ?>"><?php _ex( 'Disable', 'domain action', 'domainer' ); ?></a> | </span>
+										<?php else: ?>
+											<span class="enable"><a href="<?php echo wp_nonce_url( admin_url( 'admin-post.php?action=domainer-enable&domain_id=' . $domain->id ), 'enable-' . $domain->id ); ?>"><?php _ex( 'Enable', 'domain action', 'domainer' ); ?></a> | </span>
+										<?php endif; ?>
+										<span class="delete"><a href="<?php echo wp_nonce_url( admin_url( 'admin-post.php?action=domainer-delete&domain_id=' . $domain->id ), 'delete-' . $domain->id ); ?>"><?php _ex( 'Delete', 'domain action', 'domainer' ); ?></a></span>
+									</div>
+								</td>
+								<td class="domainer-domain-blog" data-colname="<?php _ex( 'Site', 'domain field', 'domainer' ); ?>">
+									<a href="<?php echo $site_url; ?>" target="_blank"><?php echo $site_name; ?></a>
+								</td>
+								<td class="domainer-domain-type" data-colname="<?php _ex( 'Type', 'domain field', 'domainer' ); ?>"><?php echo $type; ?></td>
+								<td class="domainer-domain-status" data-colname="<?php _ex( 'Status', 'domain field', 'domainer' ); ?>"><?php echo $domain->active ? _x( 'Active', 'domain status', 'domainer' ) : _x( 'Inactive', 'domain status', 'domainer' ); ?></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
-					<tfoot>
-						<tr>
-							<td id="cb" class="manage-column column-cb check-column">
-								<label for="cb-select-all-2" class="screen-reader-text"><?php _e( 'Select All' ); ?></label>
-								<input type="checkbox" id="cb-select-all-2">
-							</td>
-							<th scope="col" class="domainer-domain-name"><?php _ex( 'Name', 'domain detail', 'domainer' ); ?></th>
-							<th scope="col" class="domainer-domain-blog"><?php _ex( 'Site', 'domain detail', 'domainer' ); ?></th>
-							<th scope="col" class="domainer-domain-type"><?php _ex( 'Type', 'domain detail', 'domainer' ); ?></th>
-							<th scope="col" class="domainer-domain-status"><?php _ex( 'Status', 'domain detail', 'domainer' ); ?></th>
-						</tr>
-					</tfoot>
 				</table>
 			<?php endif; ?>
 		</div>
