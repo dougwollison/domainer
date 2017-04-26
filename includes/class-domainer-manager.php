@@ -253,7 +253,7 @@ final class Manager extends Handler {
 
 		foreach ( $settings as $setting => $default ) {
 			if ( isset( $data[ $setting ] ) ) {
-				$options[ $setting ] = settype( $data[ $setting ], gettype( $default ) );
+				$options[ $setting ] = $data[ $setting ];
 			}
 		}
 
