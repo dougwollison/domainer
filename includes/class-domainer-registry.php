@@ -55,7 +55,10 @@ final class Registry {
 	 *
 	 * @var array
 	 */
-	protected static $options_whitelist = array();
+	protected static $options_whitelist = array(
+		// - The permanent redirection option
+		'redirection_permanent' => false,
+	);
 
 	/**
 	 * The deprecated options and their alternatives.
@@ -86,7 +89,7 @@ final class Registry {
 	/**
 	 * Retrieve the whitelist.
 	 *
-	 * @internal Used by the Installer.
+	 * @internal Used by the Installer and Manager.
 	 *
 	 * @since 1.0.0
 	 *
@@ -286,7 +289,7 @@ final class Registry {
 		}
 
 		// Load the options
-		$options = get_option( 'domainer_options' );
+		$options = get_site_option( 'domainer_options' );
 		foreach ( self::$options_whitelist as $option => $default ) {
 			$value = $default;
 			if ( isset( $options[ $option ] ) ) {
@@ -312,6 +315,6 @@ final class Registry {
 	 */
 	public static function save( $what = true ) {
 		// Save the options
-		update_option( 'domainer_options', self::$options );
+		update_site_option( 'domainer_options', self::$options );
 	}
 }
