@@ -29,9 +29,7 @@ function run() {
 	$wpdb->domainer = $wpdb->base_prefix . 'domainer';
 
 	// Flag that Domainer has been loaded
-	if ( ! defined( 'DOMAINER_LOADED' ) ) {
-		define( 'DOMAINER_LOADED', true );
-	}
+	define( 'DOMAINER_LOADED', true );
 
 	// Error out if the cookie domain is already set.
 	if ( defined( 'COOKIE_DOMAIN' ) ) {
