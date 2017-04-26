@@ -173,18 +173,81 @@ final class Manager extends Handler {
 	 * @global $plugin_page The slug of the current admin page.
 	 */
 	public static function domains_manager() {
-		global $plugin_page;
+		global $plugin_page, $wpdb;
 ?>
 		<div class="wrap">
-			<h2><?php echo get_admin_page_title(); ?></h2>
-			<?php settings_errors(); ?>
-			<form method="post" action="<?php echo admin_url( 'admin-post.php?action=' . $plugin_page ); ?>" id="<?php echo $plugin_page; ?>-form">
-				<?php wp_nonce_field( "manage-$plugin_page" ); ?>
+			<?php if ( isset( $_GET['domain_id'] ) ) : ?>
+				<?php
+				$data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->domainer WHERE domain_id = %s", $_GET['domain_id'] ), ARRAY_A ) ?: array();
+				$domain = new Domain( $data );
+				?>
 
-				<!-- to be written -->
+				<?php if ( $_GET['domain_id'] == 'new' ) : ?>
+					<h2><?php _e( 'Add New Domain', 'domainer' ); ?></h2>
+				<?php else : ?>
+					<h2><?php printf( __( 'Edit Domain: <code>%s</code>', 'domainer' ), $domain->name ); ?></h2>
+				<?php endif; ?>
 
-				<?php submit_button(); ?>
-			</form>
+				<?php settings_errors(); ?>
+				<form method="post" action="<?php echo admin_url( 'admin-post.php?action=' . $plugin_page ); ?>" id="<?php echo $plugin_page; ?>-form">
+					<?php wp_nonce_field( "$plugin_page-edit" ); ?>
+
+					<?php print_r($domain); ?>
+
+					<?php submit_button(); ?>
+				</form>
+			<?php else : ?>
+				<h2>
+					<?php echo get_admin_page_title(); ?>
+					<a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id=new' ); ?>" class="page-title-action"><?php _e( 'Add New', 'domainer' ); ?></a>
+				</h2>
+
+				<?php
+				$domains = $wpdb->get_results( "SELECT * FROM $wpdb->domainer", ARRAY_A );
+				$domains = array_map( __NAMESPACE__ . '\Domain::create_instance', $domains );
+				?>
+
+				<table id="domainer_domains" class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<td id="cb" class="manage-column column-cb check-column">
+								<label for="cb-select-all-1" class="screen-reader-text"><?php _e( 'Select All' ); ?></label>
+								<input type="checkbox" id="cb-select-all-1">
+							</td>
+							<th scope="col" class="domainer-domain-name"><?php _ex( 'Name', 'domain detail', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-blog"><?php _ex( 'Site', 'domain detail', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-type"><?php _ex( 'Type', 'domain detail', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-status"><?php _ex( 'Status', 'domain detail', 'domainer' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $domains as $domain ) : ?>
+							<tr>
+								<th scope="row" class="check-column">
+									<label class="screen-reader-text" for="domain_<?php echo $domain->id; ?>"><?php printf( __( 'Select %s', 'domainer' ), $domain->name ); ?></label>
+									<input type="checkbox" id="domain_<?php echo $domain->id; ?>" name="alldomains[]" value="<?php echo $domain->id; ?>">
+								</th>
+								<td class="domainer-domain-name" data-colname="<?php _ex( 'Name', 'domain detail', 'domainer' ); ?>"><?php echo $domain->name; ?></td>
+								<td class="domainer-domain-blog" data-colname="<?php _ex( 'Site', 'domain detail', 'domainer' ); ?>"><?php echo $domain->blog_id; ?></td>
+								<td class="domainer-domain-type" data-colname="<?php _ex( 'Type', 'domain detail', 'domainer' ); ?>"><?php echo $domain->type; ?></td>
+								<td class="domainer-domain-status" data-colname="<?php _ex( 'Status', 'domain detail', 'domainer' ); ?>"><?php echo $domain->active; ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+					<tfoot>
+						<tr>
+							<td id="cb" class="manage-column column-cb check-column">
+								<label for="cb-select-all-2" class="screen-reader-text"><?php _e( 'Select All' ); ?></label>
+								<input type="checkbox" id="cb-select-all-2">
+							</td>
+							<th scope="col" class="domainer-domain-name"><?php _ex( 'Name', 'domain detail', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-blog"><?php _ex( 'Site', 'domain detail', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-type"><?php _ex( 'Type', 'domain detail', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-status"><?php _ex( 'Status', 'domain detail', 'domainer' ); ?></th>
+						</tr>
+					</tfoot>
+				</table>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
