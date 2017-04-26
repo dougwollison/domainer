@@ -193,16 +193,32 @@ final class Installer extends Handler {
 
 		// Abort if Sunrise drop-in exists
 		if ( file_exists( $sunrise ) ) {
+			// Log the error
+			set_transient( 'domainer_sunrise_install', array(
+				'success' => false,
+				'message' => sprintf( __( 'The <code>%s</code> file already exists. It will need to be replaced/amended manually.', 'domainer' ), 'sunrise.php' ),
+			), 30 );
 			return;
 		}
 
 		// Abort if unable to write to the file
 		if ( ! is_writable( WP_CONTENT_DIR ) ) {
+			// Log the error
+			set_transient( 'domainer_sunrise_install', array(
+				'success' => false,
+				'message' => sprintf( __( 'The <code>%1$s</code> directory is not writable. You must install <code>%2$s</code> manually.', 'domainer' ), 'wp-content', 'sunrise.php' ),
+			), 30 );
 			return;
 		}
 
 		// Copy the sunrise file over
 		copy( DOMAINER_PLUGIN_DIR . '/sunrise.php', $sunrise );
+
+		// Log the result
+		set_transient( 'domainer_sunrise_install', array(
+			'success' => true,
+			'message' => sprintf( __( 'Successfully installed the <code>%1$s</code> file.', 'domainer' ), 'sunrise.php', 'wp-content' ),
+		), 30 );
 	}
 
 	/**
@@ -223,12 +239,22 @@ final class Installer extends Handler {
 
 			// Abort if still not found or if it belongs to another install
 			if ( ! @file_exists( $wp_config ) || @file_exists( dirname( ABSPATH )  . '/wp-settings.php' ) ) {
+				// Log the error
+				set_transient( 'domainer_sunrise_activate', array(
+					'success' => false,
+					'message' => sprintf( __( 'Unable to find the <code>%s</code> file for this installation.', 'domainer' ), 'wp-config.php' )
+				), 30 );
 				return;
 			}
 		}
 
 		// Abort if unable to write to the file
 		if ( ! is_writable( $wp_config ) ) {
+			// Log the error
+			set_transient( 'domainer_sunrise_activate', array(
+				'success' => false,
+				'message' => sprintf( __( 'The <code>%s</code> file is not writable. You must edit it manually.', 'domainer' ), 'wp-config.php' ),
+			), 30 );
 			return;
 		}
 
@@ -243,6 +269,18 @@ final class Installer extends Handler {
 
 			// Save the changes
 			file_put_contents( $wp_config, $config );
+
+			// Log the result
+			set_transient( 'domainer_sunrise_activate', array(
+				'success' => true,
+				'message' => sprintf( __( 'Successfully added the <code>%s</code> definition.', 'domainer' ), 'SUNRISE' ),
+			), 30 );
+		} else {
+			// Log the error
+			set_transient( 'domainer_sunrise_activate', array(
+				'success' => false,
+				'message' => sprintf( __( 'Unable to find a safe place to insert the <code>%s</code> definition. You must edit it manually.', 'domainer' ), 'SUNRISE' ),
+			), 30 );
 		}
 	}
 
