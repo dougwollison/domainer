@@ -43,20 +43,7 @@ final class Documenter extends Handler {
 	 *
 	 * @var array
 	 */
-	private static $directory = array(
-		'domains' => array(
-			'tabs' => array(
-				'overview',
-			),
-			'sidebar' => false,
-		),
-		'options' => array(
-			'tabs' => array(
-				'overview',
-			),
-			'sidebar' => false,
-		),
-	);
+	private static $directory = array();
 
 	/**
 	 * An index of screens registered for help tabs.
