@@ -56,9 +56,6 @@ final class Backend extends Handler {
 
 		// Plugin information
 		self::add_hook( 'in_plugin_update_message-' . plugin_basename( DOMAINER_PLUGIN_FILE ), 'update_notice' );
-
-		// Script/Style Enqueues
-		self::add_hook( 'admin_enqueue_scripts', 'enqueue_assets' );
 	}
 
 	// =========================
@@ -105,27 +102,5 @@ final class Backend extends Handler {
 		if ( $notice ) {
 			echo apply_filters( 'the_content', $notice );
 		}
-	}
-
-	// =========================
-	// ! Script/Style Enqueues
-	// =========================
-
-	/**
-	 * Enqueue necessary styles and scripts.
-	 *
-	 * @since 1.0.0
-	 */
-	public static function enqueue_assets(){
-		// Admin styling
-		wp_enqueue_style( 'domainer-admin', plugins_url( 'css/admin.css', DOMAINER_PLUGIN_FILE ), '1.0.0', 'screen' );
-
-		// Admin javascript
-		wp_enqueue_script( 'domainer-admin-js', plugins_url( 'js/admin.js', DOMAINER_PLUGIN_FILE ), array(), '1.0.0' );
-
-		// Localize the javascript
-		wp_localize_script( 'domainer-admin-js', 'domainerL10n', array(
-			// to be written
-		) );
 	}
 }
