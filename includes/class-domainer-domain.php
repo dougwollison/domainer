@@ -99,7 +99,7 @@ final class Domain extends Model {
 	 *		@option bool   "active"  The active status of the domain.
 	 *		@option string "type"    The type of domain (primary, redirect, or alias).
 	 */
-	public function __construct( $values ) {
+	public function __construct( $values = array() ) {
 		// Setup the object with the provided values
 		parent::__construct( $values );
 

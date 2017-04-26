@@ -45,7 +45,7 @@ abstract class Model {
 	 *
 	 * @param array $values The property values.
 	 */
-	public function __construct( $values ) {
+	public function __construct( $values = array() ) {
 		$this->update( $values );
 	}
 
