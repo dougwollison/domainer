@@ -53,7 +53,8 @@ final class Manager extends Handler {
 
 		// Settings & Pages
 		self::add_hook( 'network_admin_menu', 'add_menu_pages' );
-		self::add_hook( 'admin_init', 'register_settings' );
+		self::add_hook( 'admin_init', 'setup_options_fields' );
+		self::add_hook( 'admin_post_domainer-options', 'save_options' );
 	}
 
 	// =========================
@@ -75,38 +76,32 @@ final class Manager extends Handler {
 	 * @uses Documenter::register_help_tabs() to register help tabs for all screens.
 	 */
 	public static function add_menu_pages() {
-		// Main Options page
-		$options_page_hook = add_menu_page(
-			__( 'Domain Management Options', 'domainer' ), // page title
+		// Domain manager
+		$domains_page_hook = add_menu_page(
+			__( 'Domain Manager', 'domainer' ), // page title
 			_x( 'Domains', 'menu title', 'domainer' ), // menu title
 			'manage_options', // capability
-			'domainer-options', // slug
-			array( get_called_class(), 'settings_page' ), // callback
+			'domainer', // slug
+			array( get_called_class(), 'domains_manager' ), // callback
 			'dashicons-networking', // icon
 			90 // Postion; after settings
 		);
 
+		// Options manager
+		$options_page_hook = add_submenu_page(
+			'domainer', // parent
+			__( 'Domain Handling Options', 'domainer' ), // page title
+			_x( 'Options', 'menu title', 'domainer' ), // menu title
+			'manage_options', // capability
+			'domainer-options', // slug
+			array( get_called_class(), 'options_manager' ) // callback
+		);
+
 		// Setup the help tabs for each page
 		Documenter::register_help_tabs( array(
-			$options_page_hook => 'options',
+			"{$domains_page_hook}-network" => 'domains',
+			"{$options_page_hook}-network" => 'options',
 		) );
-	}
-
-	// =========================
-	// ! Settings Registration
-	// =========================
-
-	/**
-	 * Register the settings/fields for the admin pages.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @uses Settings::register() to register the settings.
-	 * @uses Manager::setup_options_fields() to add fields to the main options fields.
-	 */
-	public static function register_settings() {
-		register_setting( 'domainer-options', 'domainer_options', array( __CLASS__, 'update_options' ) );
-		self::setup_options_fields();
 	}
 
 	// =========================
@@ -114,18 +109,30 @@ final class Manager extends Handler {
 	// =========================
 
 	/**
-	 * Merge the updated options with the rest before saving.
+	 * Save the options.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @param mixed $value The options being updated.
-	 *
-	 * @return mixed The merged/sanitized options.
 	 */
-	public static function update_options( $updated_options ) {
-		$all_options = get_option( 'domainer_options', array() );
+	public static function save_options() {
+		if ( ! isset( $_POST['domainer_options'] ) || ! check_admin_referer( 'manage-domainer-options' ) ) {
+			cheatin();
+			exit;
+		}
 
-		return array_merge( $all_options, $updated_options );
+		$settings = Registry::get_defaults();
+		$options = get_site_option( 'domainer_options', array() );
+		$data = (array) $_POST['domainer_options'];
+
+		foreach ( $settings as $setting => $default ) {
+			if ( isset( $data[ $setting ] ) ) {
+				$options[ $setting ] = settype( $data[ $setting ], gettype( $default ) );
+			}
+		}
+
+		update_site_option( 'domainer_options', $options );
+
+		wp_redirect( admin_url( 'network/admin.php?page=domainer-options' ) );
+		exit;
 	}
 
 	// =========================
@@ -137,12 +144,16 @@ final class Manager extends Handler {
 	 *
 	 * @since 1.0.0
 	 */
-	protected static function setup_options_fields() {
+	public static function setup_options_fields() {
 		/**
 		 * General Settings
 		 */
 		$general_settings = array(
-			// to be written
+			'redirection_permanent' => array(
+				'title' => __( 'Permanently Redirect to Primary/Default Domain?', 'domainer' ),
+				'help'  => __( 'Use "permanent" (HTTP 301) instead of "temporary" (HTTP 302) redirects?', 'domainer' ),
+				'type'  => 'checkbox',
+			),
 		);
 
 		// Add the section and fields
@@ -155,20 +166,45 @@ final class Manager extends Handler {
 	// =========================
 
 	/**
-	 * Output for generic settings page.
+	 * Output for the domains manager.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @global $plugin_page The slug of the current admin page.
 	 */
-	public static function settings_page() {
+	public static function domains_manager() {
 		global $plugin_page;
 ?>
 		<div class="wrap">
 			<h2><?php echo get_admin_page_title(); ?></h2>
 			<?php settings_errors(); ?>
-			<form method="post" action="options.php" id="<?php echo $plugin_page; ?>-form">
-				<?php settings_fields( $plugin_page ); ?>
+			<form method="post" action="<?php echo admin_url( 'admin-post.php?action=' . $plugin_page ); ?>" id="<?php echo $plugin_page; ?>-form">
+				<?php wp_nonce_field( "manage-$plugin_page" ); ?>
+
+				<!-- to be written -->
+
+				<?php submit_button(); ?>
+			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Output for the options manager.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @global $plugin_page The slug of the current admin page.
+	 */
+	public static function options_manager() {
+		global $plugin_page;
+?>
+		<div class="wrap">
+			<h2><?php echo get_admin_page_title(); ?></h2>
+			<?php settings_errors(); ?>
+			<form method="post" action="<?php echo admin_url( 'admin-post.php?action=' . $plugin_page ); ?>" id="<?php echo $plugin_page; ?>-form">
+				<input type="hidden" name="domainer_options" value="" />
+				<?php wp_nonce_field( "manage-$plugin_page" ); ?>
 				<?php do_settings_sections( $plugin_page ); ?>
 				<?php submit_button(); ?>
 			</form>
