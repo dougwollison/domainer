@@ -68,6 +68,25 @@ final class Documenter extends Handler {
 	private static $registered_screens = array();
 
 	// =========================
+	// ! Dynamic Properties
+	// =========================
+
+	/**
+	 * Get a reference list for domain types.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return array The list of names, localized.
+	 */
+	public static function domain_type_names() {
+		return array(
+			'primary'  => _x( 'Primary',  'domain type', 'domainer' ),
+			'redirect' => _x( 'Redirect', 'domain type', 'domainer' ),
+			'alias'    => _x( 'Alias',    'domain type', 'domainer' ),
+		);
+	}
+
+	// =========================
 	// ! Hook Registration
 	// =========================
 
