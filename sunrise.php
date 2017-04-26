@@ -36,9 +36,9 @@ final class Sunrise {
 		// Setup the domainer table alias
 		$wpdb->domainer = $wpdb->base_prefix . 'domainer';
 
-		// Flag that Sunrise has been loaded
-		if ( ! defined( 'SUNRISE_LOADED' ) ) {
-			define( 'SUNRISE_LOADED', true );
+		// Flag that Domainer has been loaded
+		if ( ! defined( 'DOMAINER_LOADED' ) ) {
+			define( 'DOMAINER_LOADED', true );
 		}
 
 		// Error out if the cookie domain is already set.
