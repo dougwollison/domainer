@@ -54,10 +54,10 @@ final class Settings {
 		// Handle prefixing the name with domainer_options
 		if ( preg_match( '/([^\[]+)(\[.+\])/', $field, $matches ) ) {
 			$id = "domainer_" . trim( preg_replace( '/[\[\]]+/', '_', $field ), '_' );
-			$name = "domainer_options[{$matches[1]}]{$matches[2]}";
+			$name = "domainer_{$page}[{$matches[1]}]{$matches[2]}";
 		} else {
 			$id = "domainer_{$field}";
-			$name = "domainer_options[{$field}]";
+			$name = "domainer_{$page}[{$field}]";
 		}
 
 		// Build the callback arguments
@@ -168,7 +168,7 @@ final class Settings {
 
 		// Get the value
 		if ( $context == 'domain' ) {
-			$domain = Registry::get_domain( $_REQUEST['domain_id'] );
+			$domain = Registry::get_domain( $_REQUEST['domain_id'] ) ?: new Domain();
 			$value = $domain->$name;
 		} else {
 			$value = Registry::get( $name );
