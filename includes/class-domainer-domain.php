@@ -59,17 +59,6 @@ final class Domain extends Model {
 	public $blog_id = 0;
 
 	/**
-	 * The active status of the domain.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @access public
-	 *
-	 * @var bool
-	 */
-	public $active = true;
-
-	/**
 	 * The type of domain (primary, redirect, alias).
 	 *
 	 * @since 1.0.0
@@ -96,7 +85,6 @@ final class Domain extends Model {
 	 * @param array $values The property values.
 	 *		@option string "name"    The full domain name.
 	 *		@option int    "blog_id" The ID of the site this maps to.
-	 *		@option bool   "active"  The active status of the domain.
 	 *		@option string "type"    The type of domain (primary, redirect, or alias).
 	 */
 	public function __construct( $values = array() ) {
@@ -113,9 +101,6 @@ final class Domain extends Model {
 		if ( ! in_array( $this->type, array( 'primary', 'redirect', 'alias' ) ) ) {
 			$this->type = 'redirect';
 		}
-
-		// Ensure $active is boolean
-		$this->active = (bool) intval( $this->active );
 	}
 
 	// =========================

@@ -58,8 +58,6 @@ final class Manager extends Handler {
 
 		// Action Handling
 		self::add_hook( 'admin_post_domainer-update', 'update_domain' );
-		self::add_hook( 'admin_post_domainer-disable', 'disable_domain' );
-		self::add_hook( 'admin_post_domainer-enable', 'enable_domain' );
 		self::add_hook( 'admin_post_domainer-delete', 'delete_domain' );
 		self::add_hook( 'admin_post_domainer-options', 'save_options' );
 	}
@@ -158,14 +156,11 @@ final class Manager extends Handler {
 	}
 
 	/**
-	 * Handle a domain action (disable, enable, delete).
+	 * Delete a domain.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @param string $action The action to perform.
-	 * @param string $message The update message on success.
 	 */
-	protected static function handle_domain_action( $action, $message ) {
+	public static function delete_domain() {
 		global $wpdb;
 
 		if ( ! isset( $_REQUEST['domain_id'] ) || ! check_admin_referer( $action . '-' . $_REQUEST['domain_id'] ) ) {
@@ -173,67 +168,16 @@ final class Manager extends Handler {
 			exit;
 		}
 
-		switch ( $action ) {
-			case 'disable':
-			case 'enable':
-				$wpdb->update( $wpdb->domainer, array(
-					'active' => $action == 'enable',
-				), array(
-					'id' => $_REQUEST['domain_id'],
-				) );
-				break;
+		$wpdb->delete( $wpdb->domainer, array(
+			'id' => $_REQUEST['domain_id'],
+		) );
 
-			case 'delete':
-				$wpdb->delete( $wpdb->domainer, array(
-					'id' => $_REQUEST['domain_id'],
-				) );
-				break;
-		}
-
-		if ( $wpdb->last_error ) {
-			add_settings_error(
-				'domainer',
-				'domainer_wpdb',
-				sprintf( _x( 'Unexpected error updating domain: %s', 'domainer' ), $wpdb->last_error ),
-				'error'
-			);
-		}
-
-		// Check for setting errors; add the "updated" message if none are found
-		if ( ! count( get_settings_errors() ) ) {
-			add_settings_error( 'domainer', 'settings_updated', $message, 'updated' );
-		}
+		// Add the "deleted" message
+		add_settings_error( 'domainer', 'settings_updated', __( 'Domain deleted', 'domainer' ), 'updated' );
 		set_transient( 'settings_errors', get_settings_errors(), 30 );
 
 		wp_redirect( admin_url( 'network/admin.php?page=domainer&settings-updated=true' ) );
 		exit;
-	}
-
-	/**
-	 * Disable a domain.
-	 *
-	 * @since 1.0.0
-	 */
-	public static function disable_domain() {
-		self::handle_domain_action( 'disable', __( 'Domain disabled.', 'domainer' ) );
-	}
-
-	/**
-	 * Enable a domain.
-	 *
-	 * @since 1.0.0
-	 */
-	public static function enable_domain() {
-		self::handle_domain_action( 'enable', __( 'Domain enabled.', 'domainer' ) );
-	}
-
-	/**
-	 * Delete a domain.
-	 *
-	 * @since 1.0.0
-	 */
-	public static function delete_domain() {
-		self::handle_domain_action( 'delete', __( 'Domain deleted.', 'domainer' ) );
 	}
 
 	/**
@@ -303,11 +247,6 @@ final class Manager extends Handler {
 				'help'  => __( 'Should redirection involving this domain be handled?', 'domainer' ),
 				'type'  => 'select',
 				'data'  => Documenter::domain_type_names(),
-			),
-			'active' => array(
-				'title' => __( 'Active?', 'domainer' ),
-				'help'  => __( 'Uncheck to keep this domain on file but ignore handling of it.', 'domainer' ),
-				'type'  => 'checkbox',
 			),
 		);
 
@@ -391,7 +330,6 @@ final class Manager extends Handler {
 							<th scope="col" class="domainer-domain-name"><?php _ex( 'Name', 'domain field', 'domainer' ); ?></th>
 							<th scope="col" class="domainer-domain-blog"><?php _ex( 'Site', 'domain field', 'domainer' ); ?></th>
 							<th scope="col" class="domainer-domain-type"><?php _ex( 'Type', 'domain field', 'domainer' ); ?></th>
-							<th scope="col" class="domainer-domain-status"><?php _ex( 'Status', 'domain field', 'domainer' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -406,12 +344,6 @@ final class Manager extends Handler {
 									<a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id='. $domain->id ); ?>"><?php echo $domain->name; ?></a>
 									<div class="row-actions">
 										<span class="edit"><a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id='. $domain->id ); ?>"><?php _ex( 'Edit', 'domain action', 'domainer' ); ?></a> | </span>
-
-										<?php if ( $domain->active ) : ?>
-											<span class="disable"><a href="<?php echo wp_nonce_url( admin_url( 'admin-post.php?action=domainer-disable&domain_id=' . $domain->id ), 'disable-' . $domain->id ); ?>"><?php _ex( 'Disable', 'domain action', 'domainer' ); ?></a> | </span>
-										<?php else: ?>
-											<span class="enable"><a href="<?php echo wp_nonce_url( admin_url( 'admin-post.php?action=domainer-enable&domain_id=' . $domain->id ), 'enable-' . $domain->id ); ?>"><?php _ex( 'Enable', 'domain action', 'domainer' ); ?></a> | </span>
-										<?php endif; ?>
 										<span class="delete"><a href="<?php echo wp_nonce_url( admin_url( 'admin-post.php?action=domainer-delete&domain_id=' . $domain->id ), 'delete-' . $domain->id ); ?>"><?php _ex( 'Delete', 'domain action', 'domainer' ); ?></a></span>
 									</div>
 								</td>
@@ -419,7 +351,6 @@ final class Manager extends Handler {
 									<a href="<?php echo $site_url; ?>" target="_blank"><?php echo $site_name; ?></a>
 								</td>
 								<td class="domainer-domain-type" data-colname="<?php _ex( 'Type', 'domain field', 'domainer' ); ?>"><?php echo $type; ?></td>
-								<td class="domainer-domain-status" data-colname="<?php _ex( 'Status', 'domain field', 'domainer' ); ?>"><?php echo $domain->active ? _x( 'Active', 'domain status', 'domainer' ) : _x( 'Inactive', 'domain status', 'domainer' ); ?></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>

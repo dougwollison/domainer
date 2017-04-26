@@ -54,7 +54,7 @@ final class Sunrise {
 		$find = preg_replace( '/^www\./', '', $domain );
 
 		// See if a matching site ID can be found for the provided HOST name
-		$match = $wpdb->get_row( $wpdb->prepare( "SELECT id, blog_id FROM $wpdb->domainer WHERE name = %s AND active = 1 LIMIT 1", $find ) );
+		$match = $wpdb->get_row( $wpdb->prepare( "SELECT id, blog_id FROM $wpdb->domainer WHERE name = %s LIMIT 1", $find ) );
 		if ( $match ) {
 			// Ensure a matching site is found
 			if ( $current_blog = \WP_Site::get_instance( $match->blog_id ) ) {

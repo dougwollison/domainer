@@ -168,7 +168,6 @@ final class Installer extends Handler {
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			name varchar(253) DEFAULT '' NOT NULL,
 			blog_id bigint(20) unsigned NOT NULL,
-			active tinyint(1) DEFAULT '1' NOT NULL,
 			type enum('primary','redirect','alias') DEFAULT 'redirect' NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY domain (name)
