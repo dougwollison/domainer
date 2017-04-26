@@ -56,6 +56,10 @@ final class Backend extends Handler {
 
 		// Plugin information
 		self::add_hook( 'in_plugin_update_message-' . plugin_basename( DOMAINER_PLUGIN_FILE ), 'update_notice' );
+
+		// Admin interface changes
+		self::add_hook( 'wpmu_blogs_columns', 'add_domains_column', 15, 1 );
+		self::add_hook( 'manage_sites_custom_column', 'do_domains_column', 10, 2 );
 	}
 
 	// =========================
@@ -101,6 +105,50 @@ final class Backend extends Handler {
 		// Print out the notice if there is one
 		if ( $notice ) {
 			echo apply_filters( 'the_content', $notice );
+		}
+	}
+
+	// =========================
+	// ! Admin Interface Changes
+	// =========================
+
+	/**
+	 * Register the "Domains" column for the sites table.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $columns The list of columns.
+	 *
+	 * @return array The modified columns.
+	 */
+	public static function add_domains_column( $columns ) {
+		$columns['domainer'] = __( 'Domains', 'domainer' );
+		return $columns;
+	}
+
+	/**
+	 * Print the content of the domains column.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $column  The ID of the current column.
+	 * @param int    $blog_id The current site.
+	 */
+	public static function do_domains_column( $column, $blog_id ) {
+		global $wpdb;
+
+		// Abort if not the right column
+		if ( $column != 'domainer' ) {
+			return;
+		}
+
+		// Get all domains, ordered by type (i.e. primary first)
+		$domains = $wpdb->get_results( $wpdb->prepare( "SELECT name, type FROM $wpdb->domainer WHERE blog_id = %d AND active = 1 ORDER BY FIELD( type, 'primary', 'alias', 'redirect' )", $blog_id ) );
+
+		if ( $domains ) {
+			foreach ( $domains as $domain ) {
+				printf( '<a href="http://%1$s" target="_blank">%1$s</a> (%2$s) <br />', $domain->name, $domain->type );
+			}
 		}
 	}
 }
