@@ -22,8 +22,6 @@ namespace Domainer;
  * @internal
  *
  * @since 1.0.0
- *
- * @global string $pagenow The current page slug.
  */
 function is_backend() {
 	if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
