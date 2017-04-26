@@ -108,7 +108,12 @@ final class Installer extends Handler {
 		// Attempt to upgrade, in case we're activating after an plugin update
 		if ( ! self::upgrade() ) {
 			// Otherwise just install the options/tables
-			self::install();
+			self::install_options();
+			self::install_tables();
+
+			// Also attempt to install/activate Sunrise
+			self::install_sunrise();
+			self::activate_sunrise();
 		}
 	}
 
@@ -173,6 +178,72 @@ final class Installer extends Handler {
 			UNIQUE KEY domain (name)
 		) $charset_collate;";
 		dbDelta( $sql_domainer );
+	}
+
+	/**
+	 * Attempt to install the sunrise.php drop-in.
+	 *
+	 * Rather than copy over the file, code to include
+	 * the plugin's copy will be included.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function install_sunrise() {
+		$sunrise = WP_CONTENT_DIR . '/sunrise.php';
+
+		// Abort if Sunrise drop-in exists
+		if ( file_exists( $sunrise ) ) {
+			return;
+		}
+
+		// Abort if unable to write to the file
+		if ( ! is_writable( WP_CONTENT_DIR ) ) {
+			return;
+		}
+
+		// Copy the sunrise file over
+		copy( DOMAINER_PLUGIN_DIR . '/sunrise.php', $sunrise );
+	}
+
+	/**
+	 * Attempt to copy sunrise.php to /wp-content/
+	 *
+	 * @since 1.0.0
+	 */
+	public static function activate_sunrise() {
+		// Abort if Sunrise is already active
+		if ( defined( 'SUNRISE' ) ) {
+			return;
+		}
+
+		// Find the wp-config file
+		$wp_config = ABSPATH . 'wp-config.php';
+		if ( ! file_exists( $wp_config ) ) {
+			$wp_config = dirname( ABSPATH )  . '/wp-config.php';
+
+			// Abort if still not found or if it belongs to another install
+			if ( ! @file_exists( $wp_config ) || @file_exists( dirname( ABSPATH )  . '/wp-settings.php' ) ) {
+				return;
+			}
+		}
+
+		// Abort if unable to write to the file
+		if ( ! is_writable( $wp_config ) ) {
+			return;
+		}
+
+		// Get the config file contents
+		$config = file_get_contents( $wp_config );
+
+		// Attempt to find the "Stop Editing" marker
+		$marker = "/* That's all, stop editing!";
+		if ( strpos( $config, $marker ) !== false ) {
+			// Insert the SUNRISE definition before it
+			$config = str_replace( $marker, "define( 'SUNRISE', true );\r\n\r\n$marker", $config );
+
+			// Save the changes
+			file_put_contents( $wp_config, $config );
+		}
 	}
 
 	// =========================
