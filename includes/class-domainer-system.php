@@ -145,9 +145,12 @@ final class System extends Handler {
 
 		// Find a primary domain for this site
 		if ( $domain = Registry::get_primary_domain( $current_blog->blog_id ) ) {
+			// Get the redirect status to use (301 vs 302)
+			$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
+
 			// Build the rewritten URL
 			$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain->name . $_SERVER['REQUEST_URI'];
-			if ( wp_redirect( $redirect_url, 302 ) ) {
+			if ( wp_redirect( $redirect_url, $status ) ) {
 				exit;
 			}
 		}
