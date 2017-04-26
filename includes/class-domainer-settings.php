@@ -63,7 +63,7 @@ final class Settings {
 		// Build the callback arguments
 		$class = sanitize_key( $field );
 		$args = array(
-			'class'     => "slug-settings-field slug-settings-{$page}-field domainer_{$class}-field",
+			'class'     => "domainer-settings-field domainer-settings-{$page}-field domainer_{$class}-field",
 			'option'    => $field,
 			'id'        => $id,
 			'name'      => $name,
@@ -71,6 +71,7 @@ final class Settings {
 			'help'      => $options['help'],
 			'type'      => $options['type'],
 			'data'      => $options['data'],
+			'context'   => $page,
 		);
 
 		// Add label_for arg if appropriate
@@ -154,9 +155,10 @@ final class Settings {
 	 *
 	 * @uses Settings::extract_value() to get the value out of the array based on the map.
 	 *
-	 * @param string $name The name of the setting to retrieve.
+	 * @param string $name    The name of the setting to retrieve.
+	 * @param string $context The context of the setting (how to retrieve it).
 	 */
-	private static function get_value( $name ) {
+	private static function get_value( $name, $context = 'options' ) {
 		if ( preg_match( '/([\w-]+)\[([\w-]+)\](.*)/', $name, $matches ) ) {
 			// Field is an array map, get the actual key...
 			$name = $matches[1];
@@ -165,7 +167,12 @@ final class Settings {
 		}
 
 		// Get the value
-		$value = Registry::get( $name );
+		if ( $context == 'domain' ) {
+			$domain = Registry::get_domain( $_REQUEST['domain_id'] );
+			$value = $domain->$name;
+		} else {
+			$value = Registry::get( $name );
+		}
 
 		// Process the value via the map if necessary
 		if ( ! empty( $map ) ) {
@@ -196,7 +203,7 @@ final class Settings {
 	public static function build_field( $args, $value = null ) {
 		// Get the value for the field if not provided
 		if ( is_null( $value ) ) {
-			$value = self::get_value( $args['option'] );
+			$value = self::get_value( $args['option'], $args['context'] );
 		}
 
 		switch ( $args['type'] ) {
