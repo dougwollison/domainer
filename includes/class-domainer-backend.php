@@ -61,11 +61,6 @@ final class Backend extends Handler {
 		self::add_hook( 'wpmu_blogs_columns', 'add_domains_column', 15, 1 );
 		self::add_hook( 'manage_sites_custom_column', 'do_domains_column', 10, 2 );
 
-		if ( defined( 'DOMAINER_REWRITTEN' ) ) {
-			// Original Domain redirection
-			self::add_hook( 'plugins_loaded', 'redirect_to_original', 10, 0 );
-		}
-
 		// Sunrise installation/activation
 		self::add_hook( 'network_admin_notices', 'print_sunrise_result', 10, 0 );
 		self::add_hook( 'network_admin_notices', 'print_sunrise_notice', 10, 0 );
@@ -159,32 +154,6 @@ final class Backend extends Handler {
 			foreach ( $domains as $domain ) {
 				printf( '<a href="http://%1$s" target="_blank">%1$s</a> (%2$s) <br />', $domain->name, $domain->type );
 			}
-		}
-	}
-
-	// =========================
-	// ! Original Domain Handling
-	// =========================
-
-	/**
-	 * Redirect to the original domain if needed.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @global WP_Site $current_blog The current site object.
-	 */
-	public static function redirect_to_original() {
-		global $current_blog;
-
-		// Skip if not for a HEAD/GET request
-		if ( isset( $_SERVER['REQUEST_METHOD'] ) && ! in_array( strtoupper( $_SERVER['REQUEST_METHOD'] ), array( 'GET', 'HEAD' ) ) ) {
-			return;
-		}
-
-		// Redirect to the original URL
-		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . get_true_url() . $_SERVER['REQUEST_URI'];
-		if ( wp_redirect( $redirect_url, 302 ) ) {
-			exit;
 		}
 	}
 
