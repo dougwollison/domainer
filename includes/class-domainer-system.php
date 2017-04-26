@@ -54,6 +54,11 @@ final class System extends Handler {
 	 * @uses Documenter::register_hooks() to setup admin documentation.
 	 */
 	public static function setup() {
+		global $wpdb;
+
+		// Setup the domainer table alias
+		$wpdb->domainer = $wpdb->base_prefix . 'domainer';
+
 		// Setup the registry
 		Registry::load();
 
@@ -81,15 +86,8 @@ final class System extends Handler {
 	 * @global \wpdb $wpdb The database abstraction class instance.
 	 */
 	public static function register_hooks() {
-		global $wpdb;
-
-		// Setup the domainer table alias
-		if ( ! $wpdb->domainer ) {
-			$wpdb->domainer = $wpdb->base_prefix . 'domainer';
-		}
-
 		// Primary Domain redirection
-		self::add_hook( 'wp', 'redirect_to_primary', 10, 0 );
+		self::add_hook( 'wp', 'maybe_redirect_to_primary', 10, 0 );
 
 		// URL Rewriting (if applicable).
 		if ( defined( 'DOMAINER_REWRITTEN' ) ) {
@@ -123,8 +121,12 @@ final class System extends Handler {
 	 *
 	 * @global WP_Site $current_blog The current site object.
 	 */
-	public static function redirect_to_primary() {
+	public static function maybe_redirect_to_primary() {
 		global $current_blog;
+
+		if ( is_backend() ) {
+			return;
+		}
 
 		// Skip if not for a HEAD/GET request
 		if ( isset( $_SERVER['REQUEST_METHOD'] ) && ! in_array( strtoupper( $_SERVER['REQUEST_METHOD'] ), array( 'GET', 'HEAD' ) ) ) {
