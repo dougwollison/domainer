@@ -115,14 +115,35 @@ final class Domain extends Model {
 		}
 	}
 
+	/**
+	 * Get the full domain name.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool $www Optional. If the rule is auto, which should be used?
+	 *
+	 * @return string The full domain name.
+	 */
+	public function fullname( $www = DOMAINER_USING_WWW ) {
+		$name = $this->name;
+
+		// If never, return the name
+		if ( $this->www == 'never' ) {
+			return $name;
+		}
+
+		// If always, force $www to true
+		if ( $this->www == 'always' ) {
+			$www = true;
+		}
+
+		// Return with or without www based on $www
+		return $www ? "www.$name" : $name;
+	}
+
 	// =========================
 	// ! Utilities
 	// =========================
-
-	/**
-	 * Export the config; the dump() result sans the name.
-	 *
-	 *
 
 	/**
 	 * Sanitize the domain name.
