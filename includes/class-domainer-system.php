@@ -90,7 +90,7 @@ final class System extends Handler {
 		self::add_hook( 'init', 'maybe_redirect_to_primary', 10, 0 );
 
 		// Apply filters as needed
-		if ( defined( 'DOMAINER_REWRITTEN' ) ) {
+		if ( DOMAINER_REWRITTEN ) {
 			self::add_hook( 'option_siteurl', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'option_home', 'rewrite_domain_in_url', 0, 1 );
 
@@ -123,7 +123,7 @@ final class System extends Handler {
 		global $current_blog;
 
 		// Skip if Domainer didn't rewrite anything
-		if ( ! defined( 'DOMAINER_REWRITTEN' ) ) {
+		if ( ! DOMAINER_REWRITTEN ) {
 			return;
 		}
 
