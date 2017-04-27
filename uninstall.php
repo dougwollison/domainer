@@ -59,11 +59,16 @@ final class Uninstaller {
 	/**
 	 * Perform the actual uninstallation.
 	 *
-	 * Delete all tables and all options created by nLingual.
+	 * Delete all tables and all options created by Domainer.
 	 *
 	 * @since 1.0.0
 	 */
 	public static function uninstall() {
+		global $wpdb;
+
+		// Delete the object and string translation tables
+		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}domainer" );
+
 		delete_option( 'domainer_options' );
 	}
 }
