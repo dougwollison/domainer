@@ -245,9 +245,7 @@ final class System extends Handler {
 	 * @return string The filtered URL.
 	 */
 	public static function rewrite_domain_in_url( $url ) {
-		global $current_blog;
-
-		$url = str_replace( get_true_url(), $current_blog->domain, $url );
+		$url = str_replace( get_true_url(), get_current_url(), $url );
 
 		return $url;
 	}
@@ -262,10 +260,8 @@ final class System extends Handler {
 	 * @return string The filtered content.
 	 */
 	public static function rewrite_domain_in_content( $content ) {
-		global $current_blog;
-
 		// Only replace instances prefixed with a double slash, to prevent it affecting email addresses
-		$content = str_replace( '//' . get_true_url(), '//' . $current_blog->domain, $content );
+		$content = str_replace( '//' . get_true_url(), '//' . get_current_url(), $content );
 
 		return $content;
 	}
