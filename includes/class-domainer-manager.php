@@ -174,7 +174,7 @@ final class Manager extends Handler {
 	public static function delete_domain() {
 		global $wpdb;
 
-		if ( ! isset( $_REQUEST['domain_id'] ) || ! check_admin_referer( $action . '-' . $_REQUEST['domain_id'] ) ) {
+		if ( ! isset( $_REQUEST['domain_id'] ) || ! check_admin_referer( 'delete-' . $_REQUEST['domain_id'] ) ) {
 			cheatin();
 			exit;
 		}
