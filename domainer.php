@@ -43,6 +43,28 @@ define( 'DOMAINER_PLUGIN_DIR', dirname( DOMAINER_PLUGIN_FILE ) );
  */
 define( 'DOMAINER_DB_VERSION', '2.0.0' );
 
+/**
+ * Identifies if rewriting has occured.
+ *
+ * @since 1.0.0
+ *
+ * @var bool
+ */
+if ( ! defined( 'DOMAINER_REWRITTEN' ) ) {
+	define( 'DOMAINER_REWRITTEN', false );
+}
+
+/**
+ * Identifies if www was used.
+ *
+ * @since 1.0.0
+ *
+ * @var bool
+ */
+if ( ! defined( 'DOMAINER_USING_WWW' ) ) {
+	define( 'DOMAINER_USING_WWW', false );
+}
+
 // =========================
 // ! Includes
 // =========================
