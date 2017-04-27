@@ -67,6 +67,9 @@ function run() {
 			// Flag that Domainer rewrote the domain
 			define( 'DOMAINER_REWRITTEN', true );
 
+			// Flag that the requested domain used WWW
+			define( 'DOMAINER_USING_WWW', strpos( $domain, 'www.' ) === 0 );
+
 			// Set the cookie domain constant
 			define( 'COOKIE_DOMAIN', $domain );
 		}
