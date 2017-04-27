@@ -88,6 +88,7 @@ final class System extends Handler {
 		// Redirection Handling
 		self::add_hook( 'plugins_loaded', 'maybe_redirect_to_original', 10, 0 );
 		self::add_hook( 'init', 'maybe_redirect_to_primary', 10, 0 );
+		self::add_hook( 'init', 'maybe_redirect_to_www', 10, 0 );
 
 		// Apply filters as needed
 		if ( DOMAINER_REWRITTEN ) {
@@ -194,6 +195,41 @@ final class System extends Handler {
 			if ( wp_redirect( $redirect_url, $status ) ) {
 				exit;
 			}
+		}
+	}
+
+	/**
+	 * Redirect to the domain with/out www if applicable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @global WP_Site $current_blog The current site object.
+	 */
+	public static function maybe_redirect_to_www() {
+		global $current_blog;
+
+		// Skip if Domainer didn't rewrite anything
+		if ( ! DOMAINER_REWRITTEN ) {
+			return;
+		}
+
+		// Skip if unable to find the domain
+		if ( ! $current_blog->domain_id || ! ( $domain = Registry::get_domain( $current_blog->domain_id ) ) ) {
+			return;
+		}
+
+		// Skip if the the domains rule is upheld
+		if ( $domain->www == 'auto' || ( $domain->www == 'always' && DOMAINER_USING_WWW ) || ( $domain->www == 'never' && ! DOMAINER_USING_WWW ) ) {
+			return;
+		}
+
+		// Get the redirect status to use (301 vs 302)
+		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
+
+		// Build the rewritten URL
+		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain->fullname() . substr( $_SERVER['REQUEST_URI'], strlen( $current_blog->path ) - 1 );
+		if ( wp_redirect( $redirect_url, $status ) ) {
+			exit;
 		}
 	}
 
