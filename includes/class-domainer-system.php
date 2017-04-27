@@ -86,7 +86,7 @@ final class System extends Handler {
 	 */
 	public static function register_hooks() {
 		// Redirection Handling
-		self::add_hook( 'init', 'maybe_redirect_to_original', 10, 0 );
+		self::add_hook( 'plugins_loaded', 'maybe_redirect_to_original', 10, 0 );
 		self::add_hook( 'init', 'maybe_redirect_to_primary', 10, 0 );
 
 		// Apply filters as needed
@@ -127,13 +127,13 @@ final class System extends Handler {
 			return;
 		}
 
-		// Skip if redirect_backend is enabled
-		if ( is_backend() && Registry::get( 'redirect_backend' ) ) {
+		// Skip if on the frontend
+		if ( ! is_backend() ) {
 			return;
 		}
 
-		// Skip if on the frontend and no_redirect_users is enabled
-		if ( ! is_backend() && ( ! is_user_logged_in() || Registry::get( 'no_redirect_users' ) ) ) {
+		// Skip if redirect_backend is enabled
+		if ( Registry::get( 'redirect_backend' ) ) {
 			return;
 		}
 
