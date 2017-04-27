@@ -152,7 +152,7 @@ final class Backend extends Handler {
 
 		if ( $domains ) {
 			foreach ( $domains as $domain ) {
-				printf( '<a href="http://%1$s" target="_blank">%1$s</a> (%2$s) <br />', $domain->name, $domain->type );
+				printf( '<a href="http://%1$s" target="_blank">%1$s</a> (%2$s) <br />', $domain->fullname(), $domain->type );
 			}
 		}
 	}
