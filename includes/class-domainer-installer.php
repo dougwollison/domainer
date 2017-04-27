@@ -150,6 +150,21 @@ final class Installer extends Handler {
 	private static function install_options() {
 		// Default options
 		$default_options = Registry::get_defaults();
+
+		// Import from Domain Mapping if applicable
+		$dm_to_domainer_options = array(
+			'dm_301_redirect' => 'redirection_permanent',
+			'dm_redirect_admin' => 'redirect_backend',
+			'dm_user_settings' => 'user_domain_management',
+			'dm_remote_login' => 'remote_login',
+		);
+		foreach ( $dm_to_domainer_options as $dm_option => $domainer_option ) {
+			$value = get_site_option( $dm_option, null );
+			if ( ! is_null( $value ) ) {
+				$default_options[ $domainer_option ] = get_site_option( $dm_option );
+			}
+		}
+
 		add_option( 'domainer_options', $default_options );
 	}
 
@@ -178,6 +193,27 @@ final class Installer extends Handler {
 			UNIQUE KEY domain (name)
 		) $charset_collate;";
 		dbDelta( $sql_domainer );
+
+		// Stop here if the table already existed and has entries
+		if ( intval( $wpdb->get_var( "SELECT COUNT(id) FROM $wpdb->domainer" ) ) ) {
+			return;
+		}
+
+		// Check if the domain mapping table exists
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->base_prefix}domain_mapping'" ) ) {
+			// Get the default domain type (primary or alias)
+			$default_type = intval( get_site_option( 'dm_no_primary_domain', 0 ) ) ? 'alias' : 'primary';
+
+			// Get the domains and import into the domainer table
+			$domains = $wpdb->get_results( "SELECT * FROM {$wpdb->base_prefix}domain_mapping" );
+			foreach ( $domains as $domain ) {
+				$wpdb->insert( $wpdb->domainer, array(
+					'name' => $domain->domain,
+					'blog_id' => $domain->blog_id,
+					'type' => $domain->active ? $default_type : 'redirect',
+				) );
+			}
+		}
 	}
 
 	/**
