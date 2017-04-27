@@ -129,6 +129,9 @@ final class Manager extends Handler {
 		$domain_id = $_POST['domain_id'];
 		$data = $_POST['domainer_domain'];
 
+		// Strip leading www
+		$data['name'] = preg_replace( '/^www\./', '', $data['name'] );
+
 		if ( $domain_id == 'new' ) {
 			$wpdb->insert( $wpdb->domainer, $data );
 			$domain_id = $wpdb->insert_id;
