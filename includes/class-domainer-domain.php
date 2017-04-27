@@ -67,7 +67,7 @@ final class Domain extends Model {
 	 *
 	 * @var bool
 	 */
-	public $type = 'redirect';
+	public $type = 'primary';
 
 	// =========================
 	// ! Methods
