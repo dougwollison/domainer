@@ -73,6 +73,21 @@ final class Documenter extends Handler {
 		);
 	}
 
+	/**
+	 * Get a reference list for www rules.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return array The list of names, localized.
+	 */
+	public static function www_rule_names() {
+		return array(
+			'auto'   => _x( 'Auto',   'www rule', 'domainer' ),
+			'always' => _x( 'Always', 'www rule', 'domainer' ),
+			'never'  => _x( 'Never',  'www rule', 'domainer' ),
+		);
+	}
+
 	// =========================
 	// ! Hook Registration
 	// =========================

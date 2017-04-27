@@ -262,6 +262,12 @@ final class Manager extends Handler {
 				'type'  => 'select',
 				'data'  => Documenter::domain_type_names(),
 			),
+			'www' => array(
+				'title' => __( 'WWW Rule', 'domainer' ),
+				'help'  => __( 'Should the domain be used with www?', 'domainer' ),
+				'type'  => 'select',
+				'data'  => Documenter::www_rule_names(),
+			),
 		);
 
 		// Add the section and fields
@@ -343,6 +349,7 @@ final class Manager extends Handler {
 				$domains = array_map( __NAMESPACE__ . '\Domain::create_instance', $domains );
 
 				$domain_types = Documenter::domain_type_names();
+				$www_rules = Documenter::www_rule_names();
 				?>
 
 				<br>
@@ -354,11 +361,13 @@ final class Manager extends Handler {
 							<th scope="col" class="domainer-domain-name"><?php _ex( 'Name', 'domain field', 'domainer' ); ?></th>
 							<th scope="col" class="domainer-domain-blog"><?php _ex( 'Site', 'domain field', 'domainer' ); ?></th>
 							<th scope="col" class="domainer-domain-type"><?php _ex( 'Type', 'domain field', 'domainer' ); ?></th>
+							<th scope="col" class="domainer-domain-type"><?php _ex( 'WWW?', 'domain field', 'domainer' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $domains as $domain ) :
 							$type = $domain_types[ $domain->type ];
+							$www = $www_rules[ $domain->www ];
 
 							$site_url = get_blog_option( $domain->blog_id, 'home' );
 							$site_name = get_blog_option( $domain->blog_id, 'blogname' );
@@ -375,6 +384,7 @@ final class Manager extends Handler {
 									<a href="<?php echo $site_url; ?>" target="_blank"><?php echo $site_name; ?></a>
 								</td>
 								<td class="domainer-domain-type" data-colname="<?php _ex( 'Type', 'domain field', 'domainer' ); ?>"><?php echo $type; ?></td>
+								<td class="domainer-domain-www" data-colname="<?php _ex( 'WWW?', 'domain field', 'domainer' ); ?>"><?php echo $www; ?></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>

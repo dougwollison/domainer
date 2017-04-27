@@ -189,6 +189,7 @@ final class Installer extends Handler {
 			name varchar(253) DEFAULT '' NOT NULL,
 			blog_id bigint(20) unsigned NOT NULL,
 			type enum('primary','redirect','alias') DEFAULT 'redirect' NOT NULL,
+			www enum('auto','always','never') DEFAULT 'auto' NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY domain (name)
 		) $charset_collate;";

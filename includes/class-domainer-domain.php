@@ -69,6 +69,17 @@ final class Domain extends Model {
 	 */
 	public $type = 'primary';
 
+	/**
+	 * The www handling rule (auto, always, never).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 *
+	 * @var bool
+	 */
+	public $www = 'never';
+
 	// =========================
 	// ! Methods
 	// =========================
@@ -86,6 +97,7 @@ final class Domain extends Model {
 	 *		@option string "name"    The full domain name.
 	 *		@option int    "blog_id" The ID of the site this maps to.
 	 *		@option string "type"    The type of domain (primary, redirect, or alias).
+	 *      @option string "www"     The www handling rule (auto, always, never).
 	 */
 	public function __construct( $values = array() ) {
 		// Setup the object with the provided values
