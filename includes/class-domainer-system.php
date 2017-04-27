@@ -102,8 +102,6 @@ final class System extends Handler {
 			self::add_hook( 'template_directory_uri', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'get_the_guid', 'rewrite_domain_in_url', 0, 1 );
 
-			self::add_hook( 'redirect_canonical', 'rewrite_domain_in_url', 10, 1 );
-
 			self::add_hook( 'the_content', 'rewrite_domain_in_content', 0, 1 );
 			self::add_hook( 'the_excerpt', 'rewrite_domain_in_content', 0, 1 );
 
