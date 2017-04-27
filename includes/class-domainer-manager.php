@@ -126,16 +126,23 @@ final class Manager extends Handler {
 			exit;
 		}
 
-		if ( $_POST['domain_id'] == 'new' ) {
-			$wpdb->insert( $wpdb->domainer, $_POST['domainer_domain'] );
+		$domain_id = $_POST['domain_id'];
+		$data = $_POST['domainer_domain'];
+
+		if ( $domain_id == 'new' ) {
+			$wpdb->insert( $wpdb->domainer, $data );
+			$domain_id = $wpdb->insert_id;
+
 			$success_message = __( 'Domain added.', 'domainer' );
 		} else {
-			$wpdb->update( $wpdb->domainer, $_POST['domainer_domain'], array(
-				'id' => $_POST['domain_id'],
+			$wpdb->update( $wpdb->domainer, $data, array(
+				'id' => $domain_id,
 			) );
+
 			$success_message = __( 'Domain updated.', 'domainer' );
 		}
 
+		// Report error if applicable
 		if ( $wpdb->last_error ) {
 			add_settings_error(
 				'domainer',
@@ -143,6 +150,10 @@ final class Manager extends Handler {
 				sprintf( _x( 'Unexpected error updating domain: %s', 'domainer' ), $wpdb->last_error ),
 				'error'
 			);
+		} else
+		// If this was a primary domain, change all others for the site to redirect
+		if ( $data['type'] == 'primary' ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE $wpdb->domainer SET type = 'redirect' WHERE blog_id = %d AND type = 'primary' AND id != %d", $data['blog_id'], $domain_id ) );
 		}
 
 		// Check for setting errors; add the "updated" message if none are found
