@@ -47,6 +47,17 @@ final class Registry {
 	protected static $options = array();
 
 	/**
+	 * The site-specific option overrides.
+	 *
+	 * @internal
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var array
+	 */
+	protected static $option_overrides = array();
+
+	/**
 	 * The options whitelist/defaults.
 	 *
 	 * @internal
@@ -76,6 +87,29 @@ final class Registry {
 	);
 
 	/**
+	 * The overrides whitelist.
+	 *
+	 * @internal
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var array
+	 */
+	protected static $overrides_whitelist = array(
+		// - The permanent redirection option
+		'redirection_permanent' => false,
+
+		// - The rewrite backend option
+		'redirect_backend' => false,
+
+		// - The no-rewrite for users option
+		'no_redirect_users' => false,
+
+		// - The remote login option
+		'remote_login' => false, // Support pending
+	);
+
+	/**
 	 * The deprecated options and their alternatives.
 	 *
 	 * @internal
@@ -85,17 +119,6 @@ final class Registry {
 	 * @var array
 	 */
 	protected static $options_deprecated = array();
-
-	/**
-	 * The current-state option overrides.
-	 *
-	 * @internal
-	 *
-	 * @since 1.0.0
-	 *
-	 * @var array
-	 */
-	private static $option_overrides = array();
 
 	// =========================
 	// ! Property Accessing
@@ -147,7 +170,7 @@ final class Registry {
 	 * @return mixed The property value.
 	 */
 	public static function get( $option, $default = null, $true_value = false, &$has_override = null ) {
-		// Trigger notice error if trying to set an unsupported option
+		// Trigger notice error if trying to get an unsupported option
 		if ( ! self::has( $option ) ) {
 			trigger_error( "[Domainer] The option '{$option}' is not supported.", E_USER_NOTICE );
 		}
@@ -175,56 +198,21 @@ final class Registry {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $option The option name.
-	 * @param mixed  $value  The value to assign.
+	 * @param string $option   The option name.
+	 * @param mixed  $value    Optional. The value to assign.
+	 * @param bool   $override Optional. Wether or not to set as an override.
 	 */
-	public static function set( $option, $value = null ) {
+	public static function set( $option, $value = null, $override = false ) {
 		// Trigger notice error if trying to set an unsupported option
 		if ( ! self::has( $option ) ) {
 			trigger_error( "[Domainer] The option '{$option}' is not supported", E_USER_NOTICE );
 		}
 
-		self::$options[ $option ] = $value;
-	}
-
-	/**
-	 * Set/Override multiple option values.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param array $options The options to load.
-	 */
-	public static function set_multiple( $options ) {
-		foreach ( self::$options_whitelist as $option => $default ) {
-			$value = $default;
-			if ( isset( $options[ $option ] ) ) {
-				$value = $options[ $option ];
-
-				// Ensure the value is the same type as the default
-				settype( $value, gettype( $default ) );
-			}
-
-			self::set( $option, $value );
+		if ( $override ) {
+			self::$option_overrides[ $option ] = $value;
+		} else {
+			self::$options[ $option ] = $value;
 		}
-	}
-
-	/**
-	 * Temporarily override an option value.
-	 *
-	 * These options will be retrieved when using get(), but will not be saved.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $option The option name.
-	 * @param mixed  $value  The value to override with.
-	 */
-	public static function override( $option, $value ) {
-		// Trigger notice error if trying to set an unsupported option
-		if ( ! self::has( $option ) ) {
-			trigger_error( "[Domainer] The option '{$option}' is not supported.", E_USER_NOTICE );
-		}
-
-		self::$options_override[ $option ] = $value;
 	}
 
 	// =========================
@@ -325,13 +313,32 @@ final class Registry {
 		}
 
 		// Load the options
-		$options = get_site_option( 'domainer_options' );
-		self::set_multiple( $options );
+		$options = get_site_option( 'domainer_options', array() );
+		foreach ( self::$options_whitelist as $option => $default ) {
+			$value = $default;
+			if ( isset( $options[ $option ] ) ) {
+				$value = $options[ $option ];
+
+				// Ensure the value is the same type as the default
+				settype( $value, gettype( $default ) );
+			}
+
+			self::set( $option, $value );
+		}
 
 		// Load local options if applicable
-		if ( ! is_network_admin() && Registry::get( 'admin_option_management' ) ) {
-			$overrides = get_option( 'domainer_options' );
-			self::set_multiple( $overrides );
+		if ( ! is_network_admin() && ! from_network_admin() && Registry::get( 'admin_option_management' ) ) {
+			$overrides = get_option( 'domainer_option_overrides', array() );
+			foreach ( self::$overrides_whitelist as $option => $default ) {
+				if ( isset( $overrides[ $option ] ) ) {
+					$value = $overrides[ $option ];
+
+					// Ensure the value is the same type as the default
+					settype( $value, gettype( $default ) );
+
+					self::set( $option, $value, 'override' );
+				}
+			}
 		}
 
 		// Flag that we've loaded everything
@@ -339,18 +346,20 @@ final class Registry {
 	}
 
 	/**
-	 * Save the options and domains to the database.
+	 * Save the options to the database.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @param string $what Optional. Save just options/domains or both (true)?
 	 */
-	public static function save( $for_network = false ) {
-		// Save the options
-		if ( $for_network ) {
-			update_site_option( 'domainer_options', self::$options );
-		} else {
-			update_option( 'domainer_options', self::$options );
-		}
+	public static function save_options() {
+		update_site_option( 'domainer_options', self::$options );
+	}
+
+	/**
+	 * Save the options to the database.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function save_overrides() {
+		update_option( 'domainer_option_overrides', self::$option_overrides );
 	}
 }
