@@ -234,10 +234,8 @@ final class Manager extends Handler {
 			exit;
 		}
 
-		$from_network_admin = strpos( $_POST['_wp_http_referer'], $current_blog->path . 'wp-admin/network/admin.php' ) === 0;
-
 		$domain = Registry::get_domain( $_REQUEST['domain_id'] );
-		if ( ! $from_network_admin && $domain->blog_id != $current_blog->blog_id ) {
+		if ( ! from_network_admin() && $domain->blog_id != $current_blog->blog_id ) {
 			wp_die( __( 'You cannot delete this domain because it does not belong to your site.', 'domainer' ) );
 		}
 
@@ -249,7 +247,7 @@ final class Manager extends Handler {
 		add_settings_error( 'domainer', 'settings_updated', __( 'Domain deleted.', 'domainer' ), 'updated' );
 		set_transient( 'settings_errors', get_settings_errors(), 30 );
 
-		$redirect = $from_network_admin ? 'network/admin.php?page=domainer' : 'options-general.php?page=domainer-manager';
+		$redirect = from_network_admin() ? 'network/admin.php?page=domainer' : 'options-general.php?page=domainer-manager';
 
 		wp_redirect( add_query_arg( 'settings-updated', true, admin_url( $redirect ) ) );
 		exit;
