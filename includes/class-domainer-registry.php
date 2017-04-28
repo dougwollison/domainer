@@ -169,7 +169,7 @@ final class Registry {
 	}
 
 	/**
-	 * Override a option value.
+	 * Set/Override an option value.
 	 *
 	 * Will not work for $languages, that has it's own method.
 	 *
@@ -185,6 +185,27 @@ final class Registry {
 		}
 
 		self::$options[ $option ] = $value;
+	}
+
+	/**
+	 * Set/Override multiple option values.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $options The options to load.
+	 */
+	public static function set_multiple( $options ) {
+		foreach ( self::$options_whitelist as $option => $default ) {
+			$value = $default;
+			if ( isset( $options[ $option ] ) ) {
+				$value = $options[ $option ];
+
+				// Ensure the value is the same type as the default
+				settype( $value, gettype( $default ) );
+			}
+
+			self::set( $option, $value );
+		}
 	}
 
 	/**
@@ -305,16 +326,12 @@ final class Registry {
 
 		// Load the options
 		$options = get_site_option( 'domainer_options' );
-		foreach ( self::$options_whitelist as $option => $default ) {
-			$value = $default;
-			if ( isset( $options[ $option ] ) ) {
-				$value = $options[ $option ];
+		self::set_multiple( $options );
 
-				// Ensure the value is the same type as the default
-				settype( $value, gettype( $default ) );
-			}
-
-			self::set( $option, $value );
+		// Load local options if applicable
+		if ( ! is_network_admin() && Registry:get( 'admin_option_management' ) ) {
+			$overrides = get_option( 'domainer_options' );
+			self::set_multiple( $overrides );
 		}
 
 		// Flag that we've loaded everything
@@ -328,8 +345,12 @@ final class Registry {
 	 *
 	 * @param string $what Optional. Save just options/domains or both (true)?
 	 */
-	public static function save( $what = true ) {
+	public static function save( $for_network = false ) {
 		// Save the options
-		update_site_option( 'domainer_options', self::$options );
+		if ( $for_network ) {
+			update_site_option( 'domainer_options', self::$options );
+		} else {
+			update_option( 'domainer_options', self::$options );
+		}
 	}
 }

@@ -285,7 +285,7 @@ final class Manager extends Handler {
 			Registry::set( $option, $value );
 		}
 
-		Registry::save();
+		Registry::save( from_network_admin() );
 
 		// Add an "updated" message
 		add_settings_error( 'domainer-options', 'settings_updated', __( 'Options updated.', 'domainer' ), 'updated' );
