@@ -15,6 +15,8 @@
  *
  * @since 1.0.0
  *
+ * @global \WP_Site $current_blog The current site object.
+ *
  * @param string       $content    The content to filter.
  * @param string|array $old_domain Optional. The original domain(s) to replace
  *                                 (defaults to blog's original).

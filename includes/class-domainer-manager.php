@@ -117,6 +117,8 @@ final class Manager extends Handler {
 	 * Update a domain.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
 	 */
 	public static function update_domain() {
 		global $wpdb;
@@ -173,6 +175,8 @@ final class Manager extends Handler {
 	 * Delete a domain.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
 	 */
 	public static function delete_domain() {
 		global $wpdb;

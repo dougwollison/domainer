@@ -49,7 +49,7 @@ function is_backend() {
  *
  * @since 1.0.0
  *
- * @global WP_Site $current_blog The current site object.
+ * @global \WP_Site $current_blog The current site object.
  *
  * @param int $blog_id Optional. The specific site to fetch.
  *
@@ -74,7 +74,7 @@ function get_current_url( $blog_id = null ) {
  *
  * @since 1.0.0
  *
- * @global WP_Site $current_blog The current site object.
+ * @global \WP_Site $current_blog The current site object.
  *
  * @param int $blog_id Optional. The specific site to fetch.
  *

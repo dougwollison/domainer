@@ -136,6 +136,8 @@ final class Backend extends Handler {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
+	 *
 	 * @param string $column  The ID of the current column.
 	 * @param int    $blog_id The current site.
 	 */

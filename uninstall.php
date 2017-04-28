@@ -62,6 +62,8 @@ final class Uninstaller {
 	 * Delete all tables and all options created by Domainer.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
 	 */
 	public static function uninstall() {
 		global $wpdb;

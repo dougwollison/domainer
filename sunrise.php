@@ -14,11 +14,11 @@ namespace Domainer;
  *
  * @internal Automatically called within this file.
  *
- * @global \wpdb      $wpdb         The database abstraction class instance.
- * @global WP_Network $current_site The current network object.
- * @global WP_Site    $current_blog The current site object.
- * @global int        $site_id      The ID of the current network.
- * @global int        $blog_id      The ID of the current site.
+ * @global \wpdb       $wpdb         The database abstraction class instance.
+ * @global \WP_Network $current_site The current network object.
+ * @global \WP_Site    $current_blog The current site object.
+ * @global int         $site_id      The ID of the current network.
+ * @global int         $blog_id      The ID of the current site.
  *
  * @since 1.0.0
  */

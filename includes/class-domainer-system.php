@@ -68,6 +68,8 @@ final class System extends Handler {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
+	 *
 	 * @uses Registry::load() to load the options.
 	 * @uses Loader::register_hooks() to setup plugin management.
 	 * @uses System::register_hooks() to setup global functionality.
@@ -140,6 +142,8 @@ final class System extends Handler {
 	 * Redirect to the original domain if applicable.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @global \WP_Site $current_blog The current site object.
 	 */
 	public static function maybe_redirect_to_original() {
 		global $current_blog;
@@ -172,7 +176,7 @@ final class System extends Handler {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @global WP_Site $current_blog The current site object.
+	 * @global \WP_Site $current_blog The current site object.
 	 */
 	public static function maybe_redirect_to_primary() {
 		global $current_blog;
@@ -213,7 +217,7 @@ final class System extends Handler {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @global WP_Site $current_blog The current site object.
+	 * @global \WP_Site $current_blog The current site object.
 	 */
 	public static function maybe_redirect_to_www() {
 		global $current_blog;

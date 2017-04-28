@@ -330,6 +330,8 @@ final class Installer extends Handler {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @global \wpdb $wpdb The database abstraction class instance.
+	 *
 	 * @return bool Wether or not an upgrade was performed.
 	 */
 	public static function upgrade() {
