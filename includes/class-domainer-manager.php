@@ -236,6 +236,12 @@ final class Manager extends Handler {
 			exit;
 		}
 
+		// Abort if a non super admin is requesting from the network admin
+		if ( from_network_admin() && ! current_user_can( 'manage_sites' ) ) {
+			cheatin();
+			exit;
+		}
+
 		$domain = Registry::get_domain( $_REQUEST['domain_id'] );
 		if ( ! from_network_admin() && $domain->blog_id != $current_blog->blog_id ) {
 			wp_die( __( 'You cannot delete this domain because it does not belong to your site.', 'domainer' ) );
@@ -263,6 +269,12 @@ final class Manager extends Handler {
 	public static function save_options() {
 		// Abort if insufficient permissions, no data passed, or failed referer/nonce check
 		if ( ! current_user_can( 'manage_options' ) || ! isset( $_POST['domainer_options'] ) || ! check_admin_referer( 'manage-domainer-options' ) ) {
+			cheatin();
+			exit;
+		}
+
+		// Abort if a non super admin is requesting from the network admin
+		if ( from_network_admin() && ! current_user_can( 'manage_sites' ) ) {
 			cheatin();
 			exit;
 		}
