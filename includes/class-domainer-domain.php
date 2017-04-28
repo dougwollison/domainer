@@ -106,7 +106,8 @@ final class Domain extends Model {
 		// Sanitize name (lowercase, no WWW)
 		$this->name = self::sanitize( $this->name );
 
-		// Ensure $blog_id is integer
+		// Ensure $id an $blog_id is integer
+		$this->id = intval( $this->id );
 		$this->blog_id = intval( $this->blog_id );
 
 		// Ensure $type is a valid value
