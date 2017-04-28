@@ -225,7 +225,7 @@ final class System extends Handler {
 		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
 
 		// Build the rewritten URL
-		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain->fullname() . substr( $_SERVER['REQUEST_URI'], strlen( $current_blog->path ) - 1 );
+		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain->fullname() . $_SERVER['REQUEST_URI'];
 		if ( wp_redirect( $redirect_url, $status ) ) {
 			exit;
 		}
