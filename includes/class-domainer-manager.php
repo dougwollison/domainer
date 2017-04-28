@@ -266,17 +266,13 @@ final class Manager extends Handler {
 			exit;
 		}
 
-		$settings = Registry::get_defaults();
-		$options = get_site_option( 'domainer_options', array() );
 		$data = (array) $_POST['domainer_options'];
 
-		foreach ( $settings as $setting => $default ) {
-			if ( isset( $data[ $setting ] ) ) {
-				$options[ $setting ] = $data[ $setting ];
-			}
+		foreach ( $data as $option => $value ) {
+			Registry::set( $option, $value );
 		}
 
-		update_site_option( 'domainer_options', $options );
+		Registry::save();
 
 		// Add an "updated" message
 		add_settings_error( 'domainer-options', 'settings_updated', __( 'Options updated.', 'domainer' ), 'updated' );
