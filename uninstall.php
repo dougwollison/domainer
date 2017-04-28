@@ -18,7 +18,7 @@ namespace Domainer;
  *
  * @since 1.0.0
  */
-public static function uninstall() {
+function uninstall() {
 	global $wpdb;
 
 	// Abort if not running in the WordPress context.
