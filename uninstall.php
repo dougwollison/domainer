@@ -47,6 +47,5 @@ public static function uninstall() {
 
 	delete_site_option( 'domainer_database_version' );
 }
-}
 
 uninstall();
