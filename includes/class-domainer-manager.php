@@ -415,7 +415,7 @@ final class Manager extends Handler {
 					<h2><?php printf( __( 'Edit Domain: %s', 'domainer' ), $domain->name ); ?></h2>
 				<?php endif; ?>
 
-				<?php settings_errors(); ?>
+				<?php if ( is_network_admin() ) settings_errors(); ?>
 				<form method="post" action="<?php echo admin_url( 'admin-post.php?action=domainer-update' ); ?>" id="<?php echo $plugin_page; ?>-form">
 					<?php wp_nonce_field( 'edit-domainer-' . $domain_id ); ?>
 					<input type="hidden" name="domain_id" value="<?php echo $domain_id; ?>">
@@ -440,7 +440,7 @@ final class Manager extends Handler {
 
 				<br>
 
-				<?php settings_errors(); ?>
+				<?php if ( is_network_admin() ) settings_errors(); ?>
 				<table id="domainer_domains" class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
@@ -492,7 +492,7 @@ final class Manager extends Handler {
 ?>
 		<div class="wrap">
 			<h2><?php echo get_admin_page_title(); ?></h2>
-			<?php settings_errors(); ?>
+			<?php if ( is_network_admin() ) settings_errors(); ?>
 			<form method="post" action="<?php echo admin_url( 'admin-post.php?action=' . $plugin_page ); ?>" id="<?php echo $plugin_page; ?>-form">
 				<input type="hidden" name="domainer_options" value="" />
 				<?php wp_nonce_field( "manage-$plugin_page" ); ?>
