@@ -56,23 +56,15 @@ function is_backend() {
  * @return string The domain + path, unslashed.
  */
 function get_current_url( $blog_id = null ) {
-	if ( is_null( $blog_id ) ) {
-		global $current_blog;
+	global $current_blog;
 
-		$domain = $current_blog->domain;
-		$path = $current_blog->path;
-	} else {
-		$blog = WP_Site::get_instance( $blog_id );
+	$blog = $blog_id ? WP_Site::get_instance( $blog_id ) : $current_blog;
 
-		$domain = $blog->domain;
-		$path = $blog->path;
+	if ( $domain = Registry::get_domain( $blog->domain_id ) ) {
+		return $domain->fullname();
 	}
 
-	if ( $_domain = Registry::get_domain( $current_blog->domain_id ) ) {
-		return $_domain->fullname();
-	}
-
-	return trim( $domain . $path, '/' );
+	return trim( $blog->domain . $blog->path, '/' );
 }
 
 /**
@@ -89,19 +81,11 @@ function get_current_url( $blog_id = null ) {
  * @return string The domain + path, unslashed.
  */
 function get_true_url( $blog_id = null ) {
-	if ( is_null( $blog_id ) ) {
-		global $current_blog;
+	global $current_blog;
 
-		$domain = $current_blog->true_domain ?: $current_blog->domain;
-		$path = $current_blog->true_path ?: $current_blog->path;
-	} else {
-		$blog = WP_Site::get_instance( $blog_id );
+	$blog = $blog_id ? WP_Site::get_instance( $blog_id ) : $current_blog;
 
-		$domain = $blog->domain;
-		$path = $blog->path;
-	}
-
-	return trim( $domain . $path, '/' );
+	return trim( $blog->domain . $blog->path, '/' );
 }
 
 // =========================
