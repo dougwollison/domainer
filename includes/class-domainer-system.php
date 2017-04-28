@@ -37,6 +37,29 @@ final class System extends Handler {
 	protected static $implemented_hooks = array();
 
 	// =========================
+	// ! Utilities
+	// =========================
+
+	/**
+	 * Redirect using the appropriate status.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $domain      The domain and path.
+	 * @param string $path_prefix The path prefix to remove.
+	 */
+	public function redirect( $domain, $path_prefix = '' ) {
+		// Get the redirect status to use (301 vs 302)
+		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
+
+		// Build the rewritten URL
+		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain_path . substr( $_SERVER['REQUEST_URI'], strlen( $path_prefix ) );
+		if ( wp_redirect( $redirect_url, $status ) ) {
+			exit;
+		}
+	}
+
+	// =========================
 	// ! Master Setup Method
 	// =========================
 
@@ -141,11 +164,7 @@ final class System extends Handler {
 			return;
 		}
 
-		// Redirect to the original URL
-		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . get_true_url() . $_SERVER['REQUEST_URI'];
-		if ( wp_redirect( $redirect_url, 302 ) ) {
-			exit;
-		}
+		self::redirect( get_true_url() );
 	}
 
 	/**
@@ -185,14 +204,7 @@ final class System extends Handler {
 
 		// Find a primary domain for this site
 		if ( $domain = Registry::get_primary_domain( $current_blog->blog_id ) ) {
-			// Get the redirect status to use (301 vs 302)
-			$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
-
-			// Build the rewritten URL
-			$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain->fullname() . substr( $_SERVER['REQUEST_URI'], strlen( $current_blog->path ) - 1 );
-			if ( wp_redirect( $redirect_url, $status ) ) {
-				exit;
-			}
+			self::redirect( $domain->fullname(), $current_blog->path );
 		}
 	}
 
@@ -221,14 +233,7 @@ final class System extends Handler {
 			return;
 		}
 
-		// Get the redirect status to use (301 vs 302)
-		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
-
-		// Build the rewritten URL
-		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain->fullname() . $_SERVER['REQUEST_URI'];
-		if ( wp_redirect( $redirect_url, $status ) ) {
-			exit;
-		}
+		self::redirect( $domain->fullname() );
 	}
 
 	// =========================
