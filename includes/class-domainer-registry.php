@@ -329,7 +329,7 @@ final class Registry {
 		self::set_multiple( $options );
 
 		// Load local options if applicable
-		if ( ! is_network_admin() && Registry:get( 'admin_option_management' ) ) {
+		if ( ! is_network_admin() && Registry::get( 'admin_option_management' ) ) {
 			$overrides = get_option( 'domainer_options' );
 			self::set_multiple( $overrides );
 		}
