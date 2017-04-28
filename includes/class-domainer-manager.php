@@ -281,11 +281,16 @@ final class Manager extends Handler {
 
 		$data = (array) $_POST['domainer_options'];
 
+		$as_override = ! from_network_admin();
 		foreach ( $data as $option => $value ) {
-			Registry::set( $option, $value );
+			Registry::set( $option, $value, $as_override );
 		}
 
-		Registry::save( from_network_admin() );
+		if ( $as_override ) {
+			Registry::save_overrides();
+		} else {
+			Registry::save_options();
+		}
 
 		// Add an "updated" message
 		add_settings_error( 'domainer-options', 'settings_updated', __( 'Options updated.', 'domainer' ), 'updated' );
