@@ -77,7 +77,6 @@ final class Manager extends Handler {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @uses Manager::settings_page() for general options page output.
 	 * @uses Documenter::register_help_tabs() to register help tabs for all screens.
 	 */
 	public static function add_menu_pages() {
@@ -87,7 +86,7 @@ final class Manager extends Handler {
 			_x( 'Domains', 'menu title', 'domainer' ), // menu title
 			'manage_options', // capability
 			'domainer', // slug
-			array( get_called_class(), 'domains_manager' ), // callback
+			array( __CLASS__, 'domains_manager' ), // callback
 			'dashicons-networking', // icon
 			90 // Postion; after settings
 		);
@@ -99,7 +98,7 @@ final class Manager extends Handler {
 			_x( 'Options', 'menu title', 'domainer' ), // menu title
 			'manage_options', // capability
 			'domainer-options', // slug
-			array( get_called_class(), 'options_manager' ) // callback
+			array( __CLASS__, 'options_manager' ) // callback
 		);
 
 		// Setup the help tabs for each page
