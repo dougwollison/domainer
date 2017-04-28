@@ -195,6 +195,9 @@ final class Installer extends Handler {
 		) $charset_collate;";
 		dbDelta( $sql_domainer );
 
+		// Log the current database version
+		add_option( 'domainer_database_version', DOMAINER_DB_VERSION );
+
 		// Stop here if the table already existed and has entries
 		if ( intval( $wpdb->get_var( "SELECT COUNT(id) FROM $wpdb->domainer" ) ) ) {
 			return;
@@ -338,7 +341,7 @@ final class Installer extends Handler {
 		global $wpdb;
 
 		// Abort if the site is using the latest version
-		if ( version_compare( get_option( 'domainer_database_version', '1.0.0' ), DOMAINER_DB_VERSION, '>=' ) ) {
+		if ( version_compare( get_option( 'domainer_database_version', '0.0.0' ), DOMAINER_DB_VERSION, '>=' ) ) {
 			return false;
 		}
 
@@ -347,6 +350,9 @@ final class Installer extends Handler {
 
 		// Add the default options
 		self::install_options();
+
+		// Log the current database version
+		update_option( 'domainer_database_version', DOMAINER_DB_VERSION );
 
 		return true;
 	}
