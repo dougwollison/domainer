@@ -190,8 +190,7 @@ final class Installer extends Handler {
 			blog_id bigint(20) unsigned NOT NULL,
 			type enum('primary','redirect','alias') DEFAULT 'redirect' NOT NULL,
 			www enum('auto','always','never') DEFAULT 'auto' NOT NULL,
-			PRIMARY KEY  (id),
-			UNIQUE KEY domain (name)
+			PRIMARY KEY  (id)
 		) $charset_collate;";
 		dbDelta( $sql_domainer );
 
@@ -345,13 +344,15 @@ final class Installer extends Handler {
 			return false;
 		}
 
-		// Install/update the tables
+		// Otherwise just install the options/tables
+		self::install_options();
 		self::install_tables();
 
-		// Add the default options
-		self::install_options();
+		// Also attempt to install/activate Sunrise
+		self::install_sunrise();
+		self::activate_sunrise();
 
-		// Log the current database version
+		// Update the current database version
 		update_site_option( 'domainer_database_version', DOMAINER_DB_VERSION );
 
 		return true;
