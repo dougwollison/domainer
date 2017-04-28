@@ -150,11 +150,12 @@ final class Backend extends Handler {
 		}
 
 		// Get all domains, ordered by type (i.e. primary first)
-		$domains = $wpdb->get_results( $wpdb->prepare( "SELECT name, type FROM $wpdb->domainer WHERE blog_id = %d ORDER BY FIELD( type, 'primary', 'alias', 'redirect' )", $blog_id ) );
+		$domains = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->domainer WHERE blog_id = %d ORDER BY FIELD( type, 'primary', 'alias', 'redirect' )", $blog_id ) );
 
 		if ( $domains ) {
 			foreach ( $domains as $domain ) {
-				printf( '<a href="http://%1$s" target="_blank">%1$s</a> (%2$s) <br />', $domain->fullname(), $domain->type );
+				$domain = new Domain( $domain );
+				printf( '<a href="%1$s%2$s" target="_blank">%3$s</a> (%4$s) <br />', is_ssl() ? 'https://' : 'http://', $domain->fullname(), $domain->type );
 			}
 		}
 	}
