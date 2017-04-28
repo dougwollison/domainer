@@ -158,7 +158,7 @@ final class Manager extends Handler {
 	 * @global \wpdb $wpdb The database abstraction class instance.
 	 */
 	public static function update_domain() {
-		global $wpdb;
+		global $wpdb, $current_blog;
 
 		if ( ! isset( $_POST['domainer_domain'] ) || ! check_admin_referer( 'edit-domainer-' . $_POST['domain_id'] ) ) {
 			cheatin();
@@ -167,6 +167,15 @@ final class Manager extends Handler {
 
 		$domain_id = $_POST['domain_id'];
 		$data = $_POST['domainer_domain'];
+
+		if ( ! from_network_admin() ) {
+			$domain = Registry::get_domain( $_REQUEST['domain_id'] );
+			if ( $domain && $domain->blog_id != $current_blog->blog_id ) {
+				wp_die( __( 'You cannot edit this domain because it does not belong to your site.', 'domainer' ) );
+			}
+
+			$data['blog_id'] = $current_blog->blog_id;
+		}
 
 		// Strip leading www
 		$data['name'] = preg_replace( '/^www\./', '', $data['name'] );
@@ -204,7 +213,9 @@ final class Manager extends Handler {
 		}
 		set_transient( 'settings_errors', get_settings_errors(), 30 );
 
-		wp_redirect( admin_url( 'network/admin.php?page=domainer&settings-updated=true' ) );
+		$redirect = from_network_admin() ? 'network/admin.php?page=domainer' : 'options-general.php?page=domainer-manager';
+
+		wp_redirect( add_query_arg( 'settings-updated', true, admin_url( $redirect ) ) );
 		exit;
 	}
 
@@ -216,22 +227,31 @@ final class Manager extends Handler {
 	 * @global \wpdb $wpdb The database abstraction class instance.
 	 */
 	public static function delete_domain() {
-		global $wpdb;
+		global $wpdb, $current_blog;
 
 		if ( ! isset( $_REQUEST['domain_id'] ) || ! check_admin_referer( 'delete-' . $_REQUEST['domain_id'] ) ) {
 			cheatin();
 			exit;
 		}
 
+		$from_network_admin = strpos( $_POST['_wp_http_referer'], $current_blog->path . 'wp-admin/network/admin.php' ) === 0;
+
+		$domain = Registry::get_domain( $_REQUEST['domain_id'] );
+		if ( ! $from_network_admin && $domain->blog_id != $current_blog->blog_id ) {
+			wp_die( __( 'You cannot delete this domain because it does not belong to your site.', 'domainer' ) );
+		}
+
 		$wpdb->delete( $wpdb->domainer, array(
-			'id' => $_REQUEST['domain_id'],
+			'id' => $domain->id,
 		) );
 
 		// Add the "deleted" message
-		add_settings_error( 'domainer', 'settings_updated', __( 'Domain deleted', 'domainer' ), 'updated' );
+		add_settings_error( 'domainer', 'settings_updated', __( 'Domain deleted.', 'domainer' ), 'updated' );
 		set_transient( 'settings_errors', get_settings_errors(), 30 );
 
-		wp_redirect( admin_url( 'network/admin.php?page=domainer&settings-updated=true' ) );
+		$redirect = $from_network_admin ? 'network/admin.php?page=domainer' : 'options-general.php?page=domainer-manager';
+
+		wp_redirect( add_query_arg( 'settings-updated', true, admin_url( $redirect ) ) );
 		exit;
 	}
 
@@ -383,7 +403,7 @@ final class Manager extends Handler {
 			wp_die( __( 'You cannot edit this domain because it belongs to a different site.', 'domain' ) );
 		}
 
-		$edit_url = menu_page_url( $plugin_page, false );
+		$edit_url = is_network_admin() ? network_admin_url( 'admin.php?page=' . $plugin_page ) : menu_page_url( $plugin_page, false );
 ?>
 		<div class="wrap">
 			<?php if ( isset( $_GET['domain_id'] ) ) : $domain_id = $_GET['domain_id']; ?>
