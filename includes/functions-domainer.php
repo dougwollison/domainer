@@ -48,9 +48,11 @@ function is_backend() {
 function from_network_admin() {
 	global $current_blog;
 
-	$referer = $_SERVER['HTTP_REFERER'];
+	$referer = '';
 	if ( isset( $_POST['_wp_http_referer'] ) ) {
 		$referer = $_POST['_wp_http_referer'];
+	} else if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
+		$referer = $_SERVER['HTTP_REFERER'];
 	}
 
 	return strpos( $referer, $current_blog->path . 'wp-admin/network/admin.php' ) === 0;
