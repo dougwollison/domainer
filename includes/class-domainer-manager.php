@@ -52,7 +52,8 @@ final class Manager extends Handler {
 		}
 
 		// Settings & Pages
-		self::add_hook( 'network_admin_menu', 'add_menu_pages' );
+		self::add_hook( 'network_admin_menu', 'register_network_admin_pages' );
+		self::add_hook( 'admin_menu', 'register_site_admin_pages' );
 		self::add_hook( 'admin_init', 'setup_domain_fields' );
 		self::add_hook( 'admin_init', 'setup_options_fields' );
 
@@ -73,18 +74,18 @@ final class Manager extends Handler {
 	// =========================
 
 	/**
-	 * Register admin pages.
+	 * Register network admin pages.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @uses Documenter::register_help_tabs() to register help tabs for all screens.
 	 */
-	public static function add_menu_pages() {
+	public static function register_network_admin_pages() {
 		// Domain manager
 		$domains_page_hook = add_menu_page(
 			__( 'Domain Manager', 'domainer' ), // page title
 			_x( 'Domains', 'menu title', 'domainer' ), // menu title
-			'manage_options', // capability
+			'manage_sites', // capability
 			'domainer', // slug
 			array( __CLASS__, 'domains_manager' ), // callback
 			'dashicons-networking', // icon
@@ -96,7 +97,7 @@ final class Manager extends Handler {
 			'domainer', // parent
 			__( 'Domain Handling Options', 'domainer' ), // page title
 			_x( 'Options', 'menu title', 'domainer' ), // menu title
-			'manage_options', // capability
+			'manage_sites', // capability
 			'domainer-options', // slug
 			array( __CLASS__, 'options_manager' ) // callback
 		);
@@ -106,6 +107,43 @@ final class Manager extends Handler {
 			"{$domains_page_hook}-network" => 'domains',
 			"{$options_page_hook}-network" => 'options',
 		) );
+	}
+
+	/**
+	 * Register site admin pages if applicable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @uses Documenter::register_help_tabs() to register help tabs for all screens.
+	 */
+	public static function register_site_admin_pages() {
+		// Setup the domain manager page if allowed
+		if ( Registry::get( 'admin_domain_management' ) ) {
+			$domains_page_hook = add_options_page(
+				__( 'Domain Manager', 'domainer' ), // page title
+				_x( 'Manage Domains', 'menu title', 'domainer' ), // menu title
+				'manage_options', // capability
+				'domainer-manager', // slug
+				array( __CLASS__, 'domains_manager' ) // callback
+			);
+
+			// Setup the help tab
+			Documenter::register_help_tab( $domains_page_hook, 'domains' );
+		}
+
+		// Setup the option manager page if allowed
+		if ( Registry::get( 'admin_option_management' ) ) {
+			$options_page_hook = add_options_page(
+				__( 'Domain Handling Options', 'domainer' ), // page title
+				_x( 'Domain Options', 'menu title', 'domainer' ), // menu title
+				'manage_options', // capability
+				'domainer-options', // slug
+				array( __CLASS__, 'options_manager' ) // callback
+			);
+
+			// Setup the help tab
+			Documenter::register_help_tab( $options_page_hook, 'options' );
+		}
 	}
 
 	// =========================
@@ -273,6 +311,10 @@ final class Manager extends Handler {
 			),
 		);
 
+		if ( ! is_network_admin() ) {
+			unset( $domain_settings['blog_id'] );
+		}
+
 		// Add the section and fields
 		add_settings_section( 'default', null, null, 'domainer-domain' );
 		Settings::add_fields( $domain_settings, 'domain' );
@@ -305,6 +347,19 @@ final class Manager extends Handler {
 			),
 		);
 
+		if ( is_network_admin() ) {
+			$general_settings['admin_domain_management'] = array(
+				'title' => __( 'Enable Per-Site Domain Management?', 'domainer' ),
+				'help'  => __( 'Allow admins of individual sites to manage their domains?', 'domainer' ),
+				'type'  => 'checkbox',
+			);
+			$general_settings['admin_option_management'] = array(
+				'title' => __( 'Enable Per-Site Option Management?', 'domainer' ),
+				'help'  => __( 'Allow admins to independently override these options for their sites?', 'domainer' ),
+				'type'  => 'checkbox',
+			);
+		}
+
 		// Add the section and fields
 		add_settings_section( 'default', null, null, 'domainer-options' );
 		Settings::add_fields( $general_settings, 'options' );
@@ -322,7 +377,13 @@ final class Manager extends Handler {
 	 * @global $plugin_page The slug of the current admin page.
 	 */
 	public static function domains_manager() {
-		global $plugin_page, $wpdb;
+		global $blog_id, $plugin_page, $wpdb;
+
+		if ( ! is_network_admin() && isset( $_GET['domain_id'] ) && ( $domain = Registry::get_domain( $_GET['domain_id'] ) ) && $domain->blog_id != $blog_id ) {
+			wp_die( __( 'You cannot edit this domain because it belongs to a different site.', 'domain' ) );
+		}
+
+		$edit_url = menu_page_url( $plugin_page, false );
 ?>
 		<div class="wrap">
 			<?php if ( isset( $_GET['domain_id'] ) ) : $domain_id = $_GET['domain_id']; ?>
@@ -344,11 +405,13 @@ final class Manager extends Handler {
 			<?php else : ?>
 				<h2>
 					<?php echo get_admin_page_title(); ?>
-					<a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id=new' ); ?>" class="page-title-action"><?php _e( 'Add New', 'domainer' ); ?></a>
+					<a href="<?php echo add_query_arg( 'domain_id', 'new', $edit_url ); ?>" class="page-title-action"><?php _e( 'Add New', 'domainer' ); ?></a>
 				</h2>
 
 				<?php
-				$domains = $wpdb->get_results( "SELECT * FROM $wpdb->domainer", ARRAY_A );
+				$where = is_network_admin() ? '' : $wpdb->prepare( "WHERE blog_id = %d", $blog_id );
+
+				$domains = $wpdb->get_results( "SELECT * FROM $wpdb->domainer $where", ARRAY_A );
 				$domains = array_map( __NAMESPACE__ . '\Domain::create_instance', $domains );
 
 				$domain_types = Documenter::domain_type_names();
@@ -377,9 +440,9 @@ final class Manager extends Handler {
 						?>
 							<tr>
 								<td class="domainer-domain-name" data-colname="<?php _ex( 'Name', 'domain field', 'domainer' ); ?>">
-									<a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id='. $domain->id ); ?>"><?php echo $domain->name; ?></a>
+									<a href="<?php echo add_query_arg( 'domain_id', $domain->id, $edit_url ); ?>"><?php echo $domain->name; ?></a>
 									<div class="row-actions">
-										<span class="edit"><a href="<?php echo admin_url( 'network/admin.php?page=domainer&domain_id='. $domain->id ); ?>"><?php _ex( 'Edit', 'domain action', 'domainer' ); ?></a> | </span>
+										<span class="edit"><a href="<?php echo add_query_arg( 'domain_id', $domain->id, $edit_url  ); ?>"><?php _ex( 'Edit', 'domain action', 'domainer' ); ?></a> | </span>
 										<span class="delete"><a href="<?php echo wp_nonce_url( admin_url( 'admin-post.php?action=domainer-delete&domain_id=' . $domain->id ), 'delete-' . $domain->id ); ?>"><?php _ex( 'Delete', 'domain action', 'domainer' ); ?></a></span>
 									</div>
 								</td>
