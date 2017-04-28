@@ -166,11 +166,11 @@ final class Manager extends Handler {
 			exit;
 		}
 
-		$domain_id = $_POST['domain_id'];
+		$domain_id = intval( $_POST['domain_id'] );
 		$data = $_POST['domainer_domain'];
 
 		if ( ! from_network_admin() ) {
-			$domain = Registry::get_domain( $_REQUEST['domain_id'] );
+			$domain = Registry::get_domain( $domain_id );
 			if ( $domain && $domain->blog_id != $current_blog->blog_id ) {
 				wp_die( __( 'You cannot edit this domain because it does not belong to your site.', 'domainer' ) );
 			}
@@ -180,6 +180,10 @@ final class Manager extends Handler {
 
 		// Strip leading www
 		$data['name'] = preg_replace( '/^www\./', '', $data['name'] );
+
+		if ( ( $domain = Registry::get_domain( $data['name'] ) ) && $domain->id !== $domain_id ) {
+			wp_die( sprintf( __( 'The domain "%s" has already been registered.', 'domainer' ), $data['name'] ) );
+		}
 
 		if ( $domain_id == 'new' ) {
 			$wpdb->insert( $wpdb->domainer, $data );
