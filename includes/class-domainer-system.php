@@ -132,6 +132,9 @@ final class System extends Handler {
 
 			self::add_hook( 'upload_dir', 'rewrite_domain_in_upload_dir', 0, 1 );
 		}
+
+		// Admin UI Tweaks
+		self::add_hook( 'admin_bar_menu', 'add_domains_item', 25, 1 );
 	}
 
 	// =========================
@@ -289,5 +292,25 @@ final class System extends Handler {
 		$upload_dir['url'] = self::rewrite_domain_in_url( $upload_dir['url'] );
 
 		return $upload_dir;
+	}
+
+	// =========================
+	// ! Admin UI Tweaks
+	// =========================
+
+	/**
+	 * Add a Domains item to the Network Admin menu.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param \WP_Admin_Bar $wp_admin_bar The admin bar object.
+	 */
+	public static function add_domains_item( $wp_admin_bar ) {
+		$wp_admin_bar->add_node( array(
+			'id' => 'network-admin-domainer',
+			'title' => __( 'Domains', 'domainer' ),
+			'parent' => 'network-admin',
+			'href' => network_admin_url( 'admin.php?page=domainer' ),
+		) );
 	}
 }
