@@ -155,7 +155,7 @@ final class Installer extends Handler {
 		$dm_to_domainer_options = array(
 			'dm_301_redirect' => 'redirection_permanent',
 			'dm_redirect_admin' => 'redirect_backend',
-			'dm_user_settings' => 'user_domain_management',
+			'dm_user_settings' => 'admin_domain_management',
 			'dm_remote_login' => 'remote_login',
 		);
 		foreach ( $dm_to_domainer_options as $dm_option => $domainer_option ) {

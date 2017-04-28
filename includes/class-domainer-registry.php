@@ -65,8 +65,11 @@ final class Registry {
 		// - The no-rewrite for users option
 		'no_redirect_users' => false,
 
-		// - The user domain management option
-		'user_domain_management' => false, // Support pending
+		// - The per-site domain management option
+		'admin_domain_management' => false,
+
+		// - The per-site options management option
+		'admin_option_management' => false,
 
 		// - The remote login option
 		'remote_login' => false, // Support pending
