@@ -41,7 +41,7 @@ define( 'DOMAINER_PLUGIN_DIR', dirname( DOMAINER_PLUGIN_FILE ) );
  *
  * @var string
  */
-define( 'DOMAINER_DB_VERSION', '2.0.0' );
+define( 'DOMAINER_DB_VERSION', '1.0.0' );
 
 /**
  * Identifies if rewriting has occured.
