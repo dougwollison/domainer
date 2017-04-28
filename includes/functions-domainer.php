@@ -105,7 +105,10 @@ function get_true_url( $blog_id = null ) {
 
 	$blog = $blog_id ? WP_Site::get_instance( $blog_id ) : $current_blog;
 
-	return trim( $blog->domain . $blog->path, '/' );
+	$domain = $blog->true_domain ?: $blog->domain;
+	$path = $blog->true_path ?: $blog->path;
+
+	return trim( $domain . $path, '/' );
 }
 
 // =========================
