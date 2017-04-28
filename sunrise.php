@@ -22,7 +22,7 @@ namespace Domainer;
  *
  * @since 1.0.0
  */
-function run() {
+function sunrise() {
 	global $wpdb, $current_site, $current_blog, $site_id, $blog_id;
 
 	// Setup the domainer table alias
@@ -76,4 +76,4 @@ function run() {
 	}
 }
 
-run();
+sunrise();
