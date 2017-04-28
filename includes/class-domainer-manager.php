@@ -279,7 +279,10 @@ final class Manager extends Handler {
 		add_settings_error( 'domainer-options', 'settings_updated', __( 'Options updated.', 'domainer' ), 'updated' );
 		set_transient( 'settings_errors', get_settings_errors(), 30 );
 
-		wp_redirect( admin_url( 'network/admin.php?page=domainer-options&settings-updated=true' ) );
+		$redirect = from_network_admin() ? 'network/admin.php' : 'options-general.php';
+		$redirect .= '?page=domainer-options';
+
+		wp_redirect( add_query_arg( 'settings-updated', true, admin_url( $redirect ) ) );
 		exit;
 	}
 
