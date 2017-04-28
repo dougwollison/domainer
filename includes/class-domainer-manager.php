@@ -160,7 +160,8 @@ final class Manager extends Handler {
 	public static function update_domain() {
 		global $wpdb, $current_blog;
 
-		if ( ! isset( $_POST['domainer_domain'] ) || ! check_admin_referer( 'edit-domainer-' . $_POST['domain_id'] ) ) {
+		// Abort if insufficient permissions, no data passed, or failed referer/nonce check
+		if ( ! current_user_can( 'manage_options' ) || ! isset( $_POST['domainer_domain'] ) || ! check_admin_referer( 'edit-domainer-' . $_POST['domain_id'] ) ) {
 			cheatin();
 			exit;
 		}
@@ -229,7 +230,8 @@ final class Manager extends Handler {
 	public static function delete_domain() {
 		global $wpdb, $current_blog;
 
-		if ( ! isset( $_REQUEST['domain_id'] ) || ! check_admin_referer( 'delete-' . $_REQUEST['domain_id'] ) ) {
+		// Abort if insufficient permissions, no data passed, or failed referer/nonce check
+		if ( ! current_user_can( 'manage_options' ) || ! isset( $_REQUEST['domain_id'] ) || ! check_admin_referer( 'delete-' . $_REQUEST['domain_id'] ) ) {
 			cheatin();
 			exit;
 		}
@@ -259,7 +261,8 @@ final class Manager extends Handler {
 	 * @since 1.0.0
 	 */
 	public static function save_options() {
-		if ( ! isset( $_POST['domainer_options'] ) || ! check_admin_referer( 'manage-domainer-options' ) ) {
+		// Abort if insufficient permissions, no data passed, or failed referer/nonce check
+		if ( ! current_user_can( 'manage_options' ) || ! isset( $_POST['domainer_options'] ) || ! check_admin_referer( 'manage-domainer-options' ) ) {
 			cheatin();
 			exit;
 		}
