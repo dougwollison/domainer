@@ -38,6 +38,24 @@ function is_backend() {
 	return is_admin() || in_array( basename( $_SERVER['SCRIPT_NAME'] ), array( 'wp-login.php', 'wp-register.php' ) );
 }
 
+/**
+ * Check if the request came from the admin or network admin.
+ *
+ * @internal
+ *
+ * @since 1.0.0
+ */
+function from_network_admin() {
+	global $current_blog;
+
+	$referer = $_SERVER['HTTP_REFERER'];
+	if ( isset( $_POST['_wp_http_referer'] ) ) {
+		$referer = $_POST['_wp_http_referer'];
+	}
+
+	return strpos( $referer, $current_blog->path . 'wp-admin/network/admin.php' ) === 0;
+}
+
 // =========================
 // ! Helper Utilities
 // =========================
