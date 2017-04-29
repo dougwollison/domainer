@@ -43,6 +43,7 @@ final class System extends Handler {
 	/**
 	 * Redirect using the appropriate status.
 	 *
+	 * @since 1.0.1 Fixed $path_prefix handling.
 	 * @since 1.0.0
 	 *
 	 * @param string $domain      The domain and path.
