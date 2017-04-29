@@ -83,7 +83,7 @@ final class Registry {
 		'admin_option_management' => false,
 
 		// - The remote login option
-		'remote_login' => false, // Support pending
+		'remote_login' => false,
 	);
 
 	/**
@@ -106,7 +106,7 @@ final class Registry {
 		'no_redirect_users' => false,
 
 		// - The remote login option
-		'remote_login' => false, // Support pending
+		'remote_login' => false,
 	);
 
 	/**
