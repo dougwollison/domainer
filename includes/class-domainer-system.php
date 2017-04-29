@@ -53,7 +53,7 @@ final class System extends Handler {
 		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
 
 		// Build the rewritten URL
-		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain . substr( $_SERVER['REQUEST_URI'], strlen( $path_prefix ) );
+		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain . '/' . ltrim( substr( $_SERVER['REQUEST_URI'], strlen( $path_prefix ) ), '/' );
 		if ( wp_redirect( $redirect_url, $status ) ) {
 			exit;
 		}
