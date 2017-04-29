@@ -66,6 +66,7 @@ final class System extends Handler {
 	/**
 	 * Register hooks and load options.
 	 *
+	 * @since 1.0.1 Add check for Multisite install.
 	 * @since 1.0.0
 	 *
 	 * @global \wpdb $wpdb The database abstraction class instance.
@@ -80,6 +81,12 @@ final class System extends Handler {
 	 */
 	public static function setup() {
 		global $wpdb;
+
+		// Abort and print notice if using without Multisite
+		if ( ! defined( 'MULTISITE' ) || ! MULTISITE ) {
+			self::add_hook( 'admin_notices', 'no_multisite_notice', 10, 0 );
+			return;
+		}
 
 		// Setup the domainer table alias
 		$wpdb->domainer = $wpdb->base_prefix . 'domainer';
@@ -98,6 +105,19 @@ final class System extends Handler {
 		Backend::register_hooks();
 		Manager::register_hooks();
 		Documenter::register_hooks();
+	}
+
+	/**
+	 * Notify the user that Domainer is useless without Multisite.
+	 *
+	 * @since 1.0.1
+	 */
+	public static function no_multisite_notice() {
+		?>
+		<div class="notice notice-warning">
+			<p><strong><?php _e( 'You installation of WordPress doesn’t seem to be using a Network setup. Domainer is useless withou this.', 'domainer' ); ?></strong></p>
+		</div>
+		<?php
 	}
 
 	// =========================
