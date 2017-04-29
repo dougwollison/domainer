@@ -52,7 +52,7 @@ function from_network_admin() {
 	if ( isset( $_POST['_wp_http_referer'] ) ) {
 		$referer = $_POST['_wp_http_referer'];
 	} else if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
-		$referer = $_SERVER['HTTP_REFERER'];
+		$referer = parse_url( $_SERVER['HTTP_REFERER'], PHP_URL_PATH );
 	}
 
 	return strpos( $referer, $current_blog->path . 'wp-admin/network/admin.php' ) === 0;
