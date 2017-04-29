@@ -65,6 +65,12 @@ final class Backend extends Handler {
 		self::add_hook( 'network_admin_notices', 'print_sunrise_result', 10, 0 );
 		self::add_hook( 'network_admin_notices', 'print_sunrise_notice', 10, 0 );
 		self::add_hook( 'admin_post_domainer-install', 'attempt_sunrise_install', 10, 0 );
+
+		// Remote login handling
+		self::add_hook( 'wp_login', 'generate_auth_tokens', 10, 2 );
+		self::add_hook( 'admin_head', 'print_auth_links', 10, 0 );
+		self::add_hook( 'admin_post_domainer-authenticate', 'verify_auth_token', 10, 0 );
+		self::add_hook( 'admin_post_nopriv_domainer-authenticate', 'verify_auth_token', 10, 0 );
 	}
 
 	// =========================
@@ -256,5 +262,141 @@ final class Backend extends Handler {
 
 		wp_redirect( wp_get_referer() );
 		exit;
+	}
+
+	// =========================
+	// ! Remote Login Handling
+	// =========================
+
+	/**
+	 * Generate unique auth tokens for each site the user belongs to.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string   $username The user's login name.
+	 * @param \WP_User $user     The user object.
+	 */
+	public static function generate_auth_tokens( $username, $user ) {
+		global $blog_id;
+
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return;
+		}
+
+		$tokens = array();
+
+		$remember = isset( $_POST['rememberme'] ) && $_POST['rememberme'];
+
+		// Loop through all sites the user belongs to
+		$sites = get_blogs_of_user( $user->ID );
+		foreach ( $sites as $site ) {
+			// Skip for current blog
+			if ( $site->userblog_id == $blog_id ) {
+				continue;
+			}
+
+			// Generate a unique key and token
+			$key = str_replace( '.', '', microtime( true ) );
+			$secret = wp_generate_password( 40, false, false );
+
+			switch_to_blog( $site->userblog_id );
+
+			set_transient( 'domainer-auth-' . sha1( $key ), array(
+				'user' => $user->ID,
+				'secret' => wp_hash_password( $secret ),
+				'remember' => $remember,
+			), 30 );
+
+			restore_current_blog();
+
+			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
+		}
+
+		$_SESSION['domainer-auth-tokens'] = $tokens;
+	}
+
+	/**
+	 * Print <script> tags for auth links.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_auth_links() {
+		global $blog_id;
+
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return;
+		}
+
+		// Skip if no tokens are present in the session
+		if ( ! isset( $_SESSION['domainer-auth-tokens'] ) ) {
+			return;
+		}
+
+		foreach ( $_SESSION['domainer-auth-tokens'] as $site => $token ) {
+			// Skip if for the current blog somehow
+			if ( $site == $blog_id ) {
+				continue;
+			}
+
+			switch_to_blog( $site );
+
+			$url = admin_url( 'admin-post.php?action=domainer-authenticate&token=' . $token );
+
+			restore_current_blog();
+
+			printf( '<script src="%s"></script>', $url );
+		}
+
+		unset( $_SESSION['domainer-auth-tokens'] );
+	}
+
+	/**
+	 * Verify the auth token and authenticate the user.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function verify_auth_token() {
+		// Fail if remote_login is not enabled
+		if ( ! Registry::get( 'remote_login' ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( '/* Remote login disabled */' );
+		}
+
+		// Fail if no token is present
+		if ( ! isset( $_REQUEST['token'] ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( '/* Remote login token missing */' );
+		}
+
+		// Get the key/secret parts
+		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
+
+		$transient = 'domainer-auth-' . sha1( $key );
+		$data = get_transient( $transient );
+		delete_transient( $transient );
+
+		// Fail if the data could not be retrieved
+		if ( ! $data ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( '/* Remote login data not found */' );
+		}
+
+		// Fail if the user specified does not exist or does not belong to this site
+		if ( ! get_userdata( $data['user'] ) || ! is_user_member_of_blog( $data['user'] ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( '/* User not authorized for this site */' );
+		}
+
+		// Fail if the secret doesn't pass
+		if ( ! wp_check_password( $secret, $data['secret'] ) ) {
+			return;
+		}
+
+		wp_set_auth_cookie( $data['user'], $data['remember'] );
+		die( '/* Authenticated on ' . COOKIE_DOMAIN . ' */' );
 	}
 }
