@@ -155,7 +155,7 @@ final class Backend extends Handler {
 		if ( $domains ) {
 			foreach ( $domains as $domain ) {
 				$domain = new Domain( $domain );
-				printf( '<a href="%1$s%2$s" target="_blank">%3$s</a> (%4$s) <br />', is_ssl() ? 'https://' : 'http://', $domain->fullname(), $domain->type );
+				printf( '<a href="%1$s%2$s" target="_blank">%2$s</a> (%3$s) <br />', is_ssl() ? 'https://' : 'http://', $domain->fullname(), $domain->type );
 			}
 		}
 	}
