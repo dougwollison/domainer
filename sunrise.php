@@ -34,7 +34,7 @@ function sunrise() {
 
 	// Error out if the cookie domain is already set.
 	if ( defined( 'COOKIE_DOMAIN' ) ) {
-		trigger_error( 'The constant "COOKIE_DOMAIN" should not be defined yet. Please remove/comment out the define() line (likely in wp-config.php', E_USER_ERROR );
+		trigger_error( '[Domainer] The constant "COOKIE_DOMAIN" should not be defined yet. Please remove/comment out the define() line (likely in wp-config.php).', E_USER_ERROR );
 	}
 
 	// Sanitize the HOST value, save it
