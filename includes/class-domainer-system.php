@@ -55,6 +55,13 @@ final class System extends Handler {
 
 		// Build the rewritten URL
 		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain . '/' . ltrim( substr( $_SERVER['REQUEST_URI'], strlen( $path_prefix ) ), '/' );
+
+		// As a failsafe, abort if the domains match
+		if ( defined( 'DOMAINER_ORIGINAL_URL' ) && $redirect_url == DOMAINER_ORIGINAL_URL ) {
+			return;
+		}
+
+		// Perform the redirect
 		if ( wp_redirect( $redirect_url, $status ) ) {
 			exit;
 		}
