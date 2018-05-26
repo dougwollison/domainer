@@ -32,7 +32,7 @@ function domainer_rewrite_url( $content, $old_domain = null, $new_domain = null 
 		global $current_blog;
 		$new_domain = rtrim( $current_blog->domain . $current_blog->path, '/' );
 
-		if ( $domain = Registry::get_domain( $current_blog->domain_id ) ) {
+		if ( $current_blog->domain_id && $domain = Domainer\Registry::get_domain( $current_blog->domain_id ) ) {
 			$new_domain = $domain->fullname();
 		}
 	}
