@@ -65,6 +65,15 @@ if ( ! defined( 'DOMAINER_USING_WWW' ) ) {
 	define( 'DOMAINER_USING_WWW', false );
 }
 
+/**
+ * Stores the (assumed) undoctored URL requested.
+ *
+ * @since 1.1.0
+ *
+ * @var string
+ */
+define( 'DOMAINER_ORIGINAL_URL', isset( $_SERVER['HTTP_HOST'] ) ? ( ( is_ssl() ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] ) : '' );
+
 // =========================
 // ! Includes
 // =========================
