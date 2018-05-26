@@ -20,6 +20,7 @@ namespace Domainer;
  * @global int         $site_id      The ID of the current network.
  * @global int         $blog_id      The ID of the current site.
  *
+ * @since 1.1.0 Drop overwritting of HTTP_HOST; just shouldn't.
  * @since 1.0.0
  */
 function sunrise() {
@@ -38,7 +39,6 @@ function sunrise() {
 
 	// Sanitize the HOST value, save it
 	$domain = strtolower( $_SERVER['HTTP_HOST'] );
-	$_SERVER['HTTP_HOST'] = $domain;
 
 	// All domains are stored without www
 	$find = preg_replace( '/^www\./', '', $domain );
