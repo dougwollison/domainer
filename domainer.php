@@ -3,7 +3,7 @@
 Plugin Name: Domainer
 Plugin URI: https://github.com/dougwollison/domainer
 Description: Domain mapping management for WordPress Multisite.
-Version: 1.0.1
+Version: 1.1.0
 Author: Doug Wollison
 Author URI: http://dougw.me
 Tags: domain mapping, domain management, multisite
@@ -64,6 +64,15 @@ if ( ! defined( 'DOMAINER_REWRITTEN' ) ) {
 if ( ! defined( 'DOMAINER_USING_WWW' ) ) {
 	define( 'DOMAINER_USING_WWW', false );
 }
+
+/**
+ * Stores the (assumed) undoctored URL requested.
+ *
+ * @since 1.1.0
+ *
+ * @var string
+ */
+define( 'DOMAINER_ORIGINAL_URL', isset( $_SERVER['HTTP_HOST'] ) ? ( ( is_ssl() ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] ) : '' );
 
 // =========================
 // ! Includes

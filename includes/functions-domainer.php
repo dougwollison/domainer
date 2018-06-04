@@ -78,7 +78,7 @@ function from_network_admin() {
 function get_current_url( $blog_id = null ) {
 	global $current_blog;
 
-	$blog = $blog_id ? WP_Site::get_instance( $blog_id ) : $current_blog;
+	$blog = $blog_id ? \WP_Site::get_instance( $blog_id ) : $current_blog;
 
 	if ( $domain = Registry::get_domain( $blog->domain_id ) ) {
 		return $domain->fullname();

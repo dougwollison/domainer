@@ -55,6 +55,13 @@ final class System extends Handler {
 
 		// Build the rewritten URL
 		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain . '/' . ltrim( substr( $_SERVER['REQUEST_URI'], strlen( $path_prefix ) ), '/' );
+
+		// As a failsafe, abort if the domains match
+		if ( defined( 'DOMAINER_ORIGINAL_URL' ) && $redirect_url == DOMAINER_ORIGINAL_URL ) {
+			return;
+		}
+
+		// Perform the redirect
 		if ( wp_redirect( $redirect_url, $status ) ) {
 			exit;
 		}
@@ -132,6 +139,7 @@ final class System extends Handler {
 	/**
 	 * Register hooks.
 	 *
+	 * @since 1.1.0 Added switch_blog hook.
 	 * @since 1.0.0
 	 */
 	public static function register_hooks() {
@@ -160,6 +168,9 @@ final class System extends Handler {
 
 		// Admin UI Tweaks
 		self::add_hook( 'admin_bar_menu', 'add_domains_item', 25, 1 );
+
+		// Blog switching handler
+		self::add_hook( 'switch_blog', 'rewrite_current_blog_object', 10, 2 );
 	}
 
 	// =========================
@@ -337,5 +348,42 @@ final class System extends Handler {
 			'parent' => 'network-admin',
 			'href' => network_admin_url( 'admin.php?page=domainer' ),
 		) );
+	}
+
+	// =========================
+	// ! Blog Switching
+	// =========================
+
+	/**
+	 * Modify the $current_blog global to reflect the switch.
+	 *
+	 * This will allow domain rewrite handling to work during switch_to_blog().
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param int $blog_id The ID of the blog being switched to.
+	 */
+	public static function rewrite_current_blog_object( $blog_id ) {
+		global $current_blog, $current_site;
+
+		// Get the new blog and primary domain for it
+		$new_blog = \WP_Site::get_instance( $blog_id );
+		$domain = Registry::get_primary_domain( $blog_id );
+
+		if ( $new_blog ) {
+			// Replace current blog
+			$current_blog = $new_blog;
+
+			if ( $domain ) {
+				// Store the true domain/path, along with the requested domain's ID
+				$current_blog->true_domain = $current_blog->domain;
+				$current_blog->true_path = $current_blog->path;
+				$current_blog->domain_id = $domain->id;
+
+				// Rewrite the domain/path
+				$current_blog->domain = $domain->fullname();
+				$current_blog->path = '/';
+			}
+		}
 	}
 }

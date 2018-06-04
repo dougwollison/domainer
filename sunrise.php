@@ -20,6 +20,7 @@ namespace Domainer;
  * @global int         $site_id      The ID of the current network.
  * @global int         $blog_id      The ID of the current site.
  *
+ * @since 1.1.0 Drop overwritting of HTTP_HOST; just shouldn't.
  * @since 1.0.0
  */
 function sunrise() {
@@ -33,12 +34,11 @@ function sunrise() {
 
 	// Error out if the cookie domain is already set.
 	if ( defined( 'COOKIE_DOMAIN' ) ) {
-		trigger_error( 'The constant "COOKIE_DOMAIN" should not be defined yet. Please remove/comment out the define() line (likely in wp-config.php', E_USER_ERROR );
+		trigger_error( '[Domainer] The constant "COOKIE_DOMAIN" should not be defined yet. Please remove/comment out the define() line (likely in wp-config.php).', E_USER_ERROR );
 	}
 
 	// Sanitize the HOST value, save it
 	$domain = strtolower( $_SERVER['HTTP_HOST'] );
-	$_SERVER['HTTP_HOST'] = $domain;
 
 	// All domains are stored without www
 	$find = preg_replace( '/^www\./', '', $domain );

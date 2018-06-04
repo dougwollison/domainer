@@ -32,7 +32,7 @@ function domainer_rewrite_url( $content, $old_domain = null, $new_domain = null 
 		global $current_blog;
 		$new_domain = rtrim( $current_blog->domain . $current_blog->path, '/' );
 
-		if ( $domain = Registry::get_domain( $current_blog->domain_id ) ) {
+		if ( $current_blog->domain_id && $domain = Domainer\Registry::get_domain( $current_blog->domain_id ) ) {
 			$new_domain = $domain->fullname();
 		}
 	}
@@ -40,4 +40,32 @@ function domainer_rewrite_url( $content, $old_domain = null, $new_domain = null 
 	$content = str_replace( (array) $old_domain, $new_domain, $content );
 
 	return $content;
+}
+
+/**
+ * Get the primary domain for the current blog.
+ *
+ * @since 1.1.0
+ *
+ * @global int      $blog_id      The current blog ID.
+ * @global \WP_Site $current_blog The current site object.
+ *
+ * @param int $blog_id Optional The ID of the current blog.
+ *
+ * @return string The primary/only domain name for the blog, falling back to the original.
+ */
+function domainer_get_primary_domain( $blog_id = null ) {
+	if ( is_null( $blog_id ) ) {
+		global $blog_id;
+	}
+
+	$domain = Domainer\Registry::get_primary_domain( $blog_id );
+
+	if ( ! $domain ) {
+		global $current_blog;
+
+		return $current_blog->domain;
+	}
+
+	return $domain->fullname();
 }

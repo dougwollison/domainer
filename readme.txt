@@ -52,6 +52,9 @@ The function can also take a domain or array of domains to replace, as well as a
 
 **Details on each release can be found [on the GitHub releases page](https://github.com/dougwollison/domainer/releases) for this project.**
 
+= 1.1.0 =
+Fixed handling of URLs when switch_to_blog was involved.
+
 = 1.0.1 =
 Fixed bug with deleting domains and certain redirect URLs.
 
