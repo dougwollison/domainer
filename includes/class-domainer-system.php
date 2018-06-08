@@ -145,7 +145,7 @@ final class System extends Handler {
 		self::add_hook( 'init', 'maybe_redirect_to_www', 10, 0 );
 
 		// Apply filters as needed
-		if ( DOMAINER_REWRITTEN ) {
+		if ( defined( 'DOMAINER_REWRITTEN' ) && DOMAINER_REWRITTEN ) {
 			self::add_hook( 'option_siteurl', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'option_home', 'rewrite_domain_in_url', 0, 1 );
 
