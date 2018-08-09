@@ -80,7 +80,7 @@ function get_current_url( $blog_id = null ) {
 
 	$blog = $blog_id ? \WP_Site::get_instance( $blog_id ) : $current_blog;
 
-	if ( $domain = Registry::get_domain( $blog->domain_id ) ) {
+	if ( property_exists( $blog, 'domain_id' ) && $domain = Registry::get_domain( $blog->domain_id ) ) {
 		return $domain->fullname();
 	}
 
@@ -105,8 +105,16 @@ function get_true_url( $blog_id = null ) {
 
 	$blog = $blog_id ? WP_Site::get_instance( $blog_id ) : $current_blog;
 
-	$domain = $blog->true_domain ?: $blog->domain;
-	$path = $blog->true_path ?: $blog->path;
+	$domain = $blog->domain;
+	$path = $blog->path;
+
+	if ( property_exists( $blog, 'true_domain' ) ) {
+		$domain = $blog->true_domain;
+	}
+
+	if ( property_exists( $blog, 'true_path' ) ) {
+		$path = $blog->true_path;
+	}
 
 	return trim( $domain . $path, '/' );
 }
