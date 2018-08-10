@@ -43,6 +43,7 @@ final class Backend extends Handler {
 	/**
 	 * Register hooks.
 	 *
+	 * @since 1.1.0 Added remote login/logout hooks.
 	 * @since 1.0.0
 	 */
 	public static function register_hooks() {
@@ -71,6 +72,12 @@ final class Backend extends Handler {
 		self::add_hook( 'admin_head', 'print_auth_links', 10, 0 );
 		self::add_hook( 'admin_post_domainer-authenticate', 'verify_auth_token', 10, 0 );
 		self::add_hook( 'admin_post_nopriv_domainer-authenticate', 'verify_auth_token', 10, 0 );
+
+		// Remote logout handling
+		self::add_hook( 'login_form_logout', 'generate_logout_tokens', 10, 0 );
+		self::add_hook( 'login_head', 'print_logout_links', 10, 0 );
+		self::add_hook( 'admin_post_domainer-logout', 'verify_logout_nonce', 10, 0 );
+		self::add_hook( 'admin_post_nopriv_domainer-logout', 'verify_logout_nonce', 10, 0 );
 	}
 
 	// =========================
@@ -400,5 +407,125 @@ final class Backend extends Handler {
 		wp_set_auth_cookie( $data['user'], $data['remember'] );
 		header( 'HTTP/1.1 200 OK' );
 		die( '/* Authenticated on ' . COOKIE_DOMAIN . ' */' );
+	}
+
+	// =========================
+	// ! Remote Logout Handling
+	// =========================
+
+	/**
+	 * Generate tokens for logging out of all sites.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function generate_logout_tokens() {
+		global $blog_id;
+
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return;
+		}
+
+		$user = wp_get_current_user();
+
+		$tokens = array();
+
+		// Loop through all sites the user belongs to
+		$sites = get_blogs_of_user( $user->ID );
+		foreach ( $sites as $site ) {
+			// Skip for current blog
+			if ( $site->userblog_id == $blog_id ) {
+				continue;
+			}
+
+			// Generate a unique key and token
+			$key = str_replace( '.', '', microtime( true ) );
+			$secret = wp_generate_password( 40, false, false );
+
+			switch_to_blog( $site->userblog_id );
+
+			set_transient( 'domainer-logout-' . sha1( $key ), wp_hash_password( $secret ), 30 );
+
+			restore_current_blog();
+
+			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
+		}
+
+		$_SESSION['domainer-logout-tokens'] = $tokens;
+	}
+
+	/**
+	 * Print <script> tags for logout links.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_logout_links() {
+		global $blog_id;
+
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return;
+		}
+
+		// Skip if no tokens are present in the session
+		if ( ! isset( $_SESSION['domainer-logout-tokens'] ) ) {
+			return;
+		}
+
+		foreach ( $_SESSION['domainer-logout-tokens'] as $site => $token ) {
+			// Skip if for the current blog somehow
+			if ( $site == $blog_id ) {
+				continue;
+			}
+
+			switch_to_blog( $site );
+
+			$url = admin_url( 'admin-post.php?action=domainer-logout&token=' . $token );
+
+			restore_current_blog();
+
+			printf( '<script src="%s"></script>', $url );
+		}
+
+		unset( $_SESSION['domainer-logout-tokens'] );
+	}
+
+	/**
+	 * Verify the auth token and authenticate the user.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function verify_logout_nonce() {
+		// Fail if remote_login is not enabled
+		if ( ! Registry::get( 'remote_login' ) ) {
+			header( 'HTTP/1.1 403 Forbidden' );
+			die( '/* Remote login disabled */' );
+		}
+
+		// Fail if no token is present
+		if ( ! isset( $_REQUEST['token'] ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( '/* Remote login token missing */' );
+		}
+
+		// Get the key/secret parts
+		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
+
+		$transient = 'domainer-logout-' . sha1( $key );
+		$hash = get_transient( $transient );
+		delete_transient( $transient );
+
+		// Fail if the secret doesn't pass
+		if ( ! $hash || ! wp_check_password( $secret, $hash ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( '/* Logout token invalid */' );
+		}
+
+		// Logout the user
+		wp_logout();
+		header( 'HTTP/1.1 200 OK' );
+		die( '/* Logged out of ' . COOKIE_DOMAIN . ' */' );
 	}
 }
