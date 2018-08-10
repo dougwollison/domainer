@@ -393,7 +393,8 @@ final class Backend extends Handler {
 
 		// Fail if the secret doesn't pass
 		if ( ! wp_check_password( $secret, $data['secret'] ) ) {
-			return;
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( '/* Authentication token invalid */' );
 		}
 
 		wp_set_auth_cookie( $data['user'], $data['remember'] );
