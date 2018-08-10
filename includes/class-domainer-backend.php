@@ -362,7 +362,7 @@ final class Backend extends Handler {
 	public static function verify_auth_token() {
 		// Fail if remote_login is not enabled
 		if ( ! Registry::get( 'remote_login' ) ) {
-			header( 'HTTP/1.1 401 Unauthorized' );
+			header( 'HTTP/1.1 403 Forbidden' );
 			die( '/* Remote login disabled */' );
 		}
 
