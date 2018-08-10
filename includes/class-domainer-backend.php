@@ -75,7 +75,7 @@ final class Backend extends Handler {
 			switch_to_blog( $site->userblog_id );
 
 			// Store the data as a transient
-			$data['secret'] = $secret;
+			$data['secret'] = wp_hash_password( $secret );
 			set_transient( "domainer-{$type}-" . sha1( $key ), $data, 30 );
 
 			restore_current_blog();
@@ -431,7 +431,7 @@ final class Backend extends Handler {
 	 * @param \WP_User $user     The user object.
 	 */
 	public static function generate_login_tokens( $username, $user ) {
-		self::generate_tokens( 'logout', $user, array(
+		self::generate_tokens( 'login', $user, array(
 			'user' => $user->ID,
 			'remember' => isset( $_POST['rememberme'] ) && $_POST['rememberme'],
 		) );
