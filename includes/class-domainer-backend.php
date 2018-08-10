@@ -357,7 +357,7 @@ final class Backend extends Handler {
 	/**
 	 * Verify the auth token and authenticate the user.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 */
 	public static function verify_auth_token() {
 		// Fail if remote_login is not enabled
