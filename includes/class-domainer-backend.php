@@ -144,7 +144,7 @@ final class Backend extends Handler {
 
 		// Fail if no token is present
 		if ( ! isset( $_REQUEST['token'] ) ) {
-			header( 'HTTP/1.1 200 OK' );
+			header( 'HTTP/1.1 401 Unauthorized' );
 			die( "/* remote $type token missing */" );
 		}
 
@@ -158,25 +158,25 @@ final class Backend extends Handler {
 
 		// Fail if the data could not be found
 		if ( ! $data ) {
-			header( 'HTTP/1.1 200 OK' );
+			header( 'HTTP/1.1 401 Unauthorized' );
 			die( "/* remote $type data not found */" );
 		}
 
 		// If specified, fail if the user does not exist or does not belong to this site
 		if ( isset( $data['user'] ) && ( ! get_userdata( $data['user'] ) || ! is_user_member_of_blog( $data['user'] ) ) ) {
-			header( 'HTTP/1.1 200 OK' );
+			header( 'HTTP/1.1 401 Unauthorized' );
 			die( "/* user not authorized for " . COOKIE_DOMAIN . " */" );
 		}
 
 		// Fail if the secret is missing
 		if ( ! isset( $data['secret'] ) ) {
-			header( 'HTTP/1.1 200 OK' );
+			header( 'HTTP/1.1 401 Unauthorized' );
 			die( "/* remote $type secret not found */" );
 		}
 
 		// Fail if the secret doesn't pass
 		if ( ! wp_check_password( $secret, $data['secret'] ) ) {
-			header( 'HTTP/1.1 200 OK' );
+			header( 'HTTP/1.1 401 Unauthorized' );
 			die( "/* $type token invalid */" );
 		}
 
