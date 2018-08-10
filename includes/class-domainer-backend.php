@@ -68,10 +68,10 @@ final class Backend extends Handler {
 		self::add_hook( 'admin_post_domainer-install', 'attempt_sunrise_install', 10, 0 );
 
 		// Remote login handling
-		self::add_hook( 'wp_login', 'generate_auth_tokens', 10, 2 );
-		self::add_hook( 'admin_head', 'print_auth_links', 10, 0 );
-		self::add_hook( 'admin_post_domainer-authenticate', 'verify_auth_token', 10, 0 );
-		self::add_hook( 'admin_post_nopriv_domainer-authenticate', 'verify_auth_token', 10, 0 );
+		self::add_hook( 'wp_login', 'generate_login_tokens', 10, 2 );
+		self::add_hook( 'admin_head', 'print_login_links', 10, 0 );
+		self::add_hook( 'admin_post_domainer-login', 'verify_login_token', 10, 0 );
+		self::add_hook( 'admin_post_nopriv_domainer-login', 'verify_login_token', 10, 0 );
 
 		// Remote logout handling
 		self::add_hook( 'login_form_logout', 'generate_logout_tokens', 10, 0 );
@@ -276,14 +276,14 @@ final class Backend extends Handler {
 	// =========================
 
 	/**
-	 * Generate login auth tokens for each site the user belongs to.
+	 * Generate login tokens for all sites the user belongs to.
 	 *
 	 * @since 1.1.0
 	 *
 	 * @param string   $username The user's login name.
 	 * @param \WP_User $user     The user object.
 	 */
-	public static function generate_auth_tokens( $username, $user ) {
+	public static function generate_login_tokens( $username, $user ) {
 		global $blog_id;
 
 		// Skip if remote_login is not enabled
@@ -310,7 +310,7 @@ final class Backend extends Handler {
 
 			switch_to_blog( $site->userblog_id );
 
-			set_transient( 'domainer-auth-' . sha1( $key ), array(
+			set_transient( 'domainer-login-' . sha1( $key ), array(
 				'user' => $user->ID,
 				'secret' => wp_hash_password( $secret ),
 				'remember' => $remember,
@@ -321,15 +321,15 @@ final class Backend extends Handler {
 			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
 		}
 
-		$_SESSION['domainer-auth-tokens'] = $tokens;
+		$_SESSION['domainer-login-tokens'] = $tokens;
 	}
 
 	/**
-	 * Print <script> tags for auth links.
+	 * Print <script> tags for login links.
 	 *
 	 * @since 1.1.0
 	 */
-	public static function print_auth_links() {
+	public static function print_login_links() {
 		global $blog_id;
 
 		// Skip if remote_login is not enabled
@@ -339,11 +339,11 @@ final class Backend extends Handler {
 		}
 
 		// Skip if no tokens are present in the session
-		if ( ! isset( $_SESSION['domainer-auth-tokens'] ) ) {
+		if ( ! isset( $_SESSION['domainer-login-tokens'] ) ) {
 			return;
 		}
 
-		foreach ( $_SESSION['domainer-auth-tokens'] as $site => $token ) {
+		foreach ( $_SESSION['domainer-login-tokens'] as $site => $token ) {
 			// Skip if for the current blog somehow
 			if ( $site == $blog_id ) {
 				continue;
@@ -351,22 +351,22 @@ final class Backend extends Handler {
 
 			switch_to_blog( $site );
 
-			$url = admin_url( 'admin-post.php?action=domainer-authenticate&token=' . $token );
+			$url = admin_url( 'admin-post.php?action=domainer-login&token=' . $token );
 
 			restore_current_blog();
 
 			printf( '<script src="%s"></script>', $url );
 		}
 
-		unset( $_SESSION['domainer-auth-tokens'] );
+		unset( $_SESSION['domainer-login-tokens'] );
 	}
 
 	/**
-	 * Verify the auth token and authenticate the user.
+	 * Verify the login token and authenticate the user.
 	 *
 	 * @since 1.1.0
 	 */
-	public static function verify_auth_token() {
+	public static function verify_login_token() {
 		// Fail if remote_login is not enabled
 		if ( ! Registry::get( 'remote_login' ) ) {
 			header( 'HTTP/1.1 403 Forbidden' );
@@ -382,7 +382,7 @@ final class Backend extends Handler {
 		// Get the key/secret parts
 		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
 
-		$transient = 'domainer-auth-' . sha1( $key );
+		$transient = 'domainer-login-' . sha1( $key );
 		$data = get_transient( $transient );
 		delete_transient( $transient );
 
@@ -414,7 +414,7 @@ final class Backend extends Handler {
 	// =========================
 
 	/**
-	 * Generate tokens for logging out of all sites.
+	 * Generate logout tokens for all sites the user belongs to.
 	 *
 	 * @since 1.0.0
 	 */
@@ -493,11 +493,10 @@ final class Backend extends Handler {
 	}
 
 	/**
-	 * Verify the auth token and authenticate the user.
+	 * Verify the logout token and end the users session.
 	 *
 	 * @since 1.1.0
 	 */
-	public static function verify_logout_nonce() {
 		// Fail if remote_login is not enabled
 		if ( ! Registry::get( 'remote_login' ) ) {
 			header( 'HTTP/1.1 403 Forbidden' );
@@ -522,6 +521,7 @@ final class Backend extends Handler {
 			header( 'HTTP/1.1 401 Unauthorized' );
 			die( '/* Logout token invalid */' );
 		}
+	public static function verify_logout_token() {
 
 		// Logout the user
 		wp_logout();
