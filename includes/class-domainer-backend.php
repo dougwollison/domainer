@@ -269,7 +269,7 @@ final class Backend extends Handler {
 	// =========================
 
 	/**
-	 * Generate unique auth tokens for each site the user belongs to.
+	 * Generate login auth tokens for each site the user belongs to.
 	 *
 	 * @since 1.1.0
 	 *
@@ -398,6 +398,7 @@ final class Backend extends Handler {
 		}
 
 		wp_set_auth_cookie( $data['user'], $data['remember'] );
+		header( 'HTTP/1.1 200 OK' );
 		die( '/* Authenticated on ' . COOKIE_DOMAIN . ' */' );
 	}
 }
