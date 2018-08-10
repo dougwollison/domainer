@@ -37,6 +37,153 @@ final class Backend extends Handler {
 	protected static $implemented_hooks = array();
 
 	// =========================
+	// ! Utilities
+	// =========================
+
+	/**
+	 * Generate a set of tokens.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string  $type The type of tokens to generate ('login', 'logout').
+	 * @param WP_User $user The user to generate tokens for.
+	 * @param array   $data Optional. The data to store the secret with.
+	 */
+	protected static function generate_tokens( $type, \WP_User $user, $data = array() ) {
+		global $blog_id;
+
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return;
+		}
+
+		$tokens = array();
+
+		// Loop through all sites the user belongs to
+		$sites = get_blogs_of_user( $user->ID );
+		foreach ( $sites as $site ) {
+			// Skip for current blog
+			if ( $site->userblog_id == $blog_id ) {
+				continue;
+			}
+
+			// Generate a unique key and token
+			$key = str_replace( '.', '', microtime( true ) );
+			$secret = wp_generate_password( 40, false, false );
+
+			switch_to_blog( $site->userblog_id );
+
+			// Store the data as a transient
+			$data['secret'] = $secret;
+			set_transient( "domainer-{$type}-" . sha1( $key ), $data, 30 );
+
+			restore_current_blog();
+
+			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
+		}
+
+		$_SESSION["domainer-{$type}-tokens"] = $tokens;
+	}
+
+	/**
+	 * Print a set of tokens.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $type The type of tokens to print ('login', 'logout').
+	 */
+	protected static function print_tokens( $type ) {
+		global $blog_id;
+
+		$action = "domainer-{$type}";
+		$key = "{$action}-tokens";
+
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return;
+		}
+
+		// Skip if no tokens are present in the session
+		if ( ! isset( $_SESSION[ $key ] ) ) {
+			return;
+		}
+
+		foreach ( $_SESSION[ $key ] as $site => $token ) {
+			// Skip if for the current blog somehow
+			if ( $site == $blog_id ) {
+				continue;
+			}
+
+			switch_to_blog( $site );
+
+			$url = admin_url( "admin-post.php?action={$action}&token={$token}" );
+
+			restore_current_blog();
+
+			echo "<script src='{$url}'></script>";
+		}
+
+		unset( $_SESSION[ $key ] );
+	}
+
+	/**
+	 * Verify a token.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $type The type of token to verify ('login', 'logout').
+	 */
+	protected static function verify_token( $type ) {
+		// Fail if remote_login is not enabled
+		if ( ! Registry::get( 'remote_login' ) ) {
+			header( 'HTTP/1.1 403 Forbidden' );
+			die( "/* remote $type disabled */" );
+		}
+
+		// Fail if no token is present
+		if ( ! isset( $_REQUEST['token'] ) ) {
+			header( 'HTTP/1.1 200 OK' );
+			die( "/* remote $type token missing */" );
+		}
+
+		// Get the key/secret parts
+		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
+		$key = sha1( $key );
+
+		$transient = "domainer-$type-$key";
+		$data = get_transient( $transient );
+		delete_transient( $transient );
+
+		// Fail if the data could not be found
+		if ( ! $data ) {
+			header( 'HTTP/1.1 200 OK' );
+			die( "/* remote $type data not found */" );
+		}
+
+		// If specified, fail if the user does not exist or does not belong to this site
+		if ( isset( $data['user'] ) && ( ! get_userdata( $data['user'] ) || ! is_user_member_of_blog( $data['user'] ) ) ) {
+			header( 'HTTP/1.1 200 OK' );
+			die( "/* user not authorized for " . COOKIE_DOMAIN . " */" );
+		}
+
+		// Fail if the secret is missing
+		if ( ! isset( $data['secret'] ) ) {
+			header( 'HTTP/1.1 200 OK' );
+			die( "/* remote $type secret not found */" );
+		}
+
+		// Fail if the secret doesn't pass
+		if ( ! wp_check_password( $secret, $data['secret'] ) ) {
+			header( 'HTTP/1.1 200 OK' );
+			die( "/* $type token invalid */" );
+		}
+
+		return $data;
+	}
+
+	// =========================
 	// ! Hook Registration
 	// =========================
 
@@ -76,8 +223,8 @@ final class Backend extends Handler {
 		// Remote logout handling
 		self::add_hook( 'login_form_logout', 'generate_logout_tokens', 10, 0 );
 		self::add_hook( 'login_head', 'print_logout_links', 10, 0 );
-		self::add_hook( 'admin_post_domainer-logout', 'verify_logout_nonce', 10, 0 );
-		self::add_hook( 'admin_post_nopriv_domainer-logout', 'verify_logout_nonce', 10, 0 );
+		self::add_hook( 'admin_post_domainer-logout', 'verify_logout_token', 10, 0 );
+		self::add_hook( 'admin_post_nopriv_domainer-logout', 'verify_logout_token', 10, 0 );
 	}
 
 	// =========================
@@ -284,44 +431,10 @@ final class Backend extends Handler {
 	 * @param \WP_User $user     The user object.
 	 */
 	public static function generate_login_tokens( $username, $user ) {
-		global $blog_id;
-
-		// Skip if remote_login is not enabled
-		// or if redirect_backend is disabled (useless if so)
-		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
-			return;
-		}
-
-		$tokens = array();
-
-		$remember = isset( $_POST['rememberme'] ) && $_POST['rememberme'];
-
-		// Loop through all sites the user belongs to
-		$sites = get_blogs_of_user( $user->ID );
-		foreach ( $sites as $site ) {
-			// Skip for current blog
-			if ( $site->userblog_id == $blog_id ) {
-				continue;
-			}
-
-			// Generate a unique key and token
-			$key = str_replace( '.', '', microtime( true ) );
-			$secret = wp_generate_password( 40, false, false );
-
-			switch_to_blog( $site->userblog_id );
-
-			set_transient( 'domainer-login-' . sha1( $key ), array(
-				'user' => $user->ID,
-				'secret' => wp_hash_password( $secret ),
-				'remember' => $remember,
-			), 30 );
-
-			restore_current_blog();
-
-			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
-		}
-
-		$_SESSION['domainer-login-tokens'] = $tokens;
+		self::generate_tokens( 'logout', $user, array(
+			'user' => $user->ID,
+			'remember' => isset( $_POST['rememberme'] ) && $_POST['rememberme'],
+		) );
 	}
 
 	/**
@@ -330,35 +443,7 @@ final class Backend extends Handler {
 	 * @since 1.1.0
 	 */
 	public static function print_login_links() {
-		global $blog_id;
-
-		// Skip if remote_login is not enabled
-		// or if redirect_backend is disabled (useless if so)
-		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
-			return;
-		}
-
-		// Skip if no tokens are present in the session
-		if ( ! isset( $_SESSION['domainer-login-tokens'] ) ) {
-			return;
-		}
-
-		foreach ( $_SESSION['domainer-login-tokens'] as $site => $token ) {
-			// Skip if for the current blog somehow
-			if ( $site == $blog_id ) {
-				continue;
-			}
-
-			switch_to_blog( $site );
-
-			$url = admin_url( 'admin-post.php?action=domainer-login&token=' . $token );
-
-			restore_current_blog();
-
-			printf( '<script src="%s"></script>', $url );
-		}
-
-		unset( $_SESSION['domainer-login-tokens'] );
+		self::print_tokens( 'login' );
 	}
 
 	/**
@@ -367,46 +452,11 @@ final class Backend extends Handler {
 	 * @since 1.1.0
 	 */
 	public static function verify_login_token() {
-		// Fail if remote_login is not enabled
-		if ( ! Registry::get( 'remote_login' ) ) {
-			header( 'HTTP/1.1 403 Forbidden' );
-			die( '/* Remote login disabled */' );
-		}
-
-		// Fail if no token is present
-		if ( ! isset( $_REQUEST['token'] ) ) {
-			header( 'HTTP/1.1 401 Unauthorized' );
-			die( '/* Remote login token missing */' );
-		}
-
-		// Get the key/secret parts
-		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
-
-		$transient = 'domainer-login-' . sha1( $key );
-		$data = get_transient( $transient );
-		delete_transient( $transient );
-
-		// Fail if the data could not be retrieved
-		if ( ! $data ) {
-			header( 'HTTP/1.1 401 Unauthorized' );
-			die( '/* Remote login data not found */' );
-		}
-
-		// Fail if the user specified does not exist or does not belong to this site
-		if ( ! get_userdata( $data['user'] ) || ! is_user_member_of_blog( $data['user'] ) ) {
-			header( 'HTTP/1.1 401 Unauthorized' );
-			die( '/* User not authorized for this site */' );
-		}
-
-		// Fail if the secret doesn't pass
-		if ( ! wp_check_password( $secret, $data['secret'] ) ) {
-			header( 'HTTP/1.1 401 Unauthorized' );
-			die( '/* Authentication token invalid */' );
-		}
+		$data = self::verify_token( 'login' );
 
 		wp_set_auth_cookie( $data['user'], $data['remember'] );
 		header( 'HTTP/1.1 200 OK' );
-		die( '/* Authenticated on ' . COOKIE_DOMAIN . ' */' );
+		die( '/* logged in on ' . COOKIE_DOMAIN . ' */' );
 	}
 
 	// =========================
@@ -419,40 +469,8 @@ final class Backend extends Handler {
 	 * @since 1.0.0
 	 */
 	public static function generate_logout_tokens() {
-		global $blog_id;
-
-		// Skip if remote_login is not enabled
-		// or if redirect_backend is disabled (useless if so)
-		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
-			return;
-		}
-
 		$user = wp_get_current_user();
-
-		$tokens = array();
-
-		// Loop through all sites the user belongs to
-		$sites = get_blogs_of_user( $user->ID );
-		foreach ( $sites as $site ) {
-			// Skip for current blog
-			if ( $site->userblog_id == $blog_id ) {
-				continue;
-			}
-
-			// Generate a unique key and token
-			$key = str_replace( '.', '', microtime( true ) );
-			$secret = wp_generate_password( 40, false, false );
-
-			switch_to_blog( $site->userblog_id );
-
-			set_transient( 'domainer-logout-' . sha1( $key ), wp_hash_password( $secret ), 30 );
-
-			restore_current_blog();
-
-			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
-		}
-
-		$_SESSION['domainer-logout-tokens'] = $tokens;
+		self::generate_tokens( 'logout', $user );
 	}
 
 	/**
@@ -461,35 +479,7 @@ final class Backend extends Handler {
 	 * @since 1.1.0
 	 */
 	public static function print_logout_links() {
-		global $blog_id;
-
-		// Skip if remote_login is not enabled
-		// or if redirect_backend is disabled (useless if so)
-		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
-			return;
-		}
-
-		// Skip if no tokens are present in the session
-		if ( ! isset( $_SESSION['domainer-logout-tokens'] ) ) {
-			return;
-		}
-
-		foreach ( $_SESSION['domainer-logout-tokens'] as $site => $token ) {
-			// Skip if for the current blog somehow
-			if ( $site == $blog_id ) {
-				continue;
-			}
-
-			switch_to_blog( $site );
-
-			$url = admin_url( 'admin-post.php?action=domainer-logout&token=' . $token );
-
-			restore_current_blog();
-
-			printf( '<script src="%s"></script>', $url );
-		}
-
-		unset( $_SESSION['domainer-logout-tokens'] );
+		self::print_tokens( 'logout' );
 	}
 
 	/**
@@ -497,35 +487,12 @@ final class Backend extends Handler {
 	 *
 	 * @since 1.1.0
 	 */
-		// Fail if remote_login is not enabled
-		if ( ! Registry::get( 'remote_login' ) ) {
-			header( 'HTTP/1.1 403 Forbidden' );
-			die( '/* Remote login disabled */' );
-		}
-
-		// Fail if no token is present
-		if ( ! isset( $_REQUEST['token'] ) ) {
-			header( 'HTTP/1.1 401 Unauthorized' );
-			die( '/* Remote login token missing */' );
-		}
-
-		// Get the key/secret parts
-		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
-
-		$transient = 'domainer-logout-' . sha1( $key );
-		$hash = get_transient( $transient );
-		delete_transient( $transient );
-
-		// Fail if the secret doesn't pass
-		if ( ! $hash || ! wp_check_password( $secret, $hash ) ) {
-			header( 'HTTP/1.1 401 Unauthorized' );
-			die( '/* Logout token invalid */' );
-		}
 	public static function verify_logout_token() {
+		self::verify_token( 'logout' );
 
 		// Logout the user
 		wp_logout();
 		header( 'HTTP/1.1 200 OK' );
-		die( '/* Logged out of ' . COOKIE_DOMAIN . ' */' );
+		die( '/* logged out on ' . COOKIE_DOMAIN . ' */' );
 	}
 }
