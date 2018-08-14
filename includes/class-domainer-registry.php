@@ -84,6 +84,13 @@ final class Registry {
 
 		// - The remote login option
 		'remote_login' => false,
+
+		// - The external IP for DNS
+		'server_addr' => '',
+
+		// - The cloudflare credentials
+		'cloudflare_key' => '',
+		'cloudflare_email' => '',
 	);
 
 	/**
@@ -107,6 +114,10 @@ final class Registry {
 
 		// - The remote login option
 		'remote_login' => false,
+
+		// - The cloudflare credentials
+		'cloudflare_key' => '',
+		'cloudflare_email' => '',
 	);
 
 	/**
