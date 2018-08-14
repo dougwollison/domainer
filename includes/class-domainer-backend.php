@@ -466,7 +466,7 @@ final class Backend extends Handler {
 	/**
 	 * Generate logout tokens for all sites the user belongs to.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 */
 	public static function generate_logout_tokens() {
 		$user = wp_get_current_user();
