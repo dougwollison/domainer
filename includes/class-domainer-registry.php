@@ -194,8 +194,6 @@ final class Registry {
 	/**
 	 * Set/Override an option value.
 	 *
-	 * Will not work for $languages, that has it's own method.
-	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $option   The option name.
