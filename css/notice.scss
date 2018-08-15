@@ -1,15 +1,51 @@
+$waiting: #00a0d2;
 $success: #46b450;
 $error: #dc3232;
 $warning: #ffb900;
 
+@keyframes domainer-waiting {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
 .domainer-notice {
 	display: none;
 
-	.result-success .dashicons {
-		color: $success;
+	p {
+		margin: .5em 0;
 	}
-	.result-error .dashicons {
+
+	.icon {
+		color: $waiting;
+		animation: domainer-waiting 2s linear infinite;
+
+		&:before {
+			content: '\f463'; // "update" arrows
+		}
+	}
+
+	.result-success .icon,
+	.result-error .icon {
+		animation: none;
+	}
+
+	.result-success .icon {
+		color: $success;
+
+		&:before {
+			content: '\f147'; // "yes" checkmark
+		}
+	}
+	.result-error .icon {
 		color: $error;
+
+		&:before {
+			content: '\f335'; // "no-alt" X
+		}
 	}
 
 	&.status-success {
