@@ -393,6 +393,22 @@ final class Manager extends Handler {
 			),
 		);
 
+		/**
+		 * DNS Settings
+		 */
+		$dns_settings = array(
+			'cloudflare_email' => array(
+				'title' => __( 'Cloudflare API Email', 'domainer' ),
+				'help'  => __( 'The email address of the Cloudflare account.', 'domainer' ),
+				'type'  => 'text',
+			),
+			'cloudflare_key' => array(
+				'title' => __( 'Cloudflare API Key', 'domainer' ),
+				'help'  => __( 'The API key of the Cloudflare account.', 'domainer' ),
+				'type'  => 'text',
+			),
+		);
+
 		if ( is_network_admin() ) {
 			$general_settings['admin_domain_management'] = array(
 				'title' => __( 'Enable Per-Site Domain Management?', 'domainer' ),
@@ -404,11 +420,21 @@ final class Manager extends Handler {
 				'help'  => __( 'Allow admins to independently override these options for their sites?', 'domainer' ),
 				'type'  => 'checkbox',
 			);
+
+			$dns_settings['server_address'] = array(
+				'title' => __( 'External Server Address', 'domainer' ),
+				'help'  => sprintf( __( 'Enter the external IP(v4/v6) address(es) of the server, if using DNS features. Comma and/or space separated. Default: %s', 'domainer' ), $_SERVER['SERVER_ADDR'] ),
+				'type'  => 'text',
+			);
 		}
 
 		// Add the section and fields
 		add_settings_section( 'default', null, null, 'domainer-options' );
 		Settings::add_fields( $general_settings, 'options' );
+
+		// Add the section and fields
+		add_settings_section( 'dns', __( 'DNS Configuration', 'domainer' ), null, 'domainer-options' );
+		Settings::add_fields( $dns_settings, 'options', 'dns' );
 	}
 
 	// =========================
