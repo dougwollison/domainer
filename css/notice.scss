@@ -1,0 +1,24 @@
+$success: #46b450;
+$error: #dc3232;
+$warning: #ffb900;
+
+.domainer-notice {
+	display: none;
+
+	.result-success .dashicons {
+		color: $success;
+	}
+	.result-error .dashicons {
+		color: $error;
+	}
+
+	&.status-success {
+		border-left-color: $success;
+	}
+	&.status-error {
+		border-left-color: $error;
+	}
+	&.status-warning {
+		border-left-color: $warning;
+	}
+}
