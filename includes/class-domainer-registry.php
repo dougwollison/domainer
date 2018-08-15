@@ -86,7 +86,7 @@ final class Registry {
 		'remote_login' => false,
 
 		// - The external IP for DNS
-		'server_addr' => '',
+		'server_address' => '',
 
 		// - The cloudflare credentials
 		'cloudflare_key' => '',
@@ -186,6 +186,12 @@ final class Registry {
 			trigger_error( "[Domainer] The option '{$option}' is not supported.", E_USER_NOTICE );
 		}
 
+		// Check if it's defined as a constant, return if so
+		$constant = 'DOMAINER_OPTION_' . strtoupper( $option );
+		if ( defined( $constant ) ) {
+			return constant( $constant );
+		}
+
 		// Check if it's set, return it's value.
 		if ( isset( self::$options[ $option ] ) ) {
 			// Check if it's been overriden, use that unless otherwise requested
@@ -215,6 +221,12 @@ final class Registry {
 		// Trigger notice error if trying to set an unsupported option
 		if ( ! self::has( $option ) ) {
 			trigger_error( "[Domainer] The option '{$option}' is not supported", E_USER_NOTICE );
+		}
+
+		// Check if it's defined as a constant, skip if so
+		$constant = 'DOMAINER_OPTION_' . strtoupper( $option );
+		if ( defined( $constant ) ) {
+			return;
 		}
 
 		if ( $override ) {

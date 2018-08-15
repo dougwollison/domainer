@@ -228,6 +228,10 @@ final class Settings {
 			// Regular fields
 			default:
 				$method = "build_input_field";
+				// If it's a defined option, flag as readonly
+				if ( defined( 'DOMAINER_OPTION_' . strtoupper( $args['option'] ) ) ) {
+					$args['data']['readonly'] = 'readonly';
+				}
 				$cb_args = array( $args['name'], $args['id'], $value, $args['type'], $args['data'] );
 		}
 
