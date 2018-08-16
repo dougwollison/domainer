@@ -386,6 +386,11 @@ final class Manager extends Handler {
 				'help'  => __( 'Allow logged in users to view the site on it’s original domain?', 'domainer' ),
 				'type'  => 'checkbox',
 			),
+			'remote_login' => array(
+				'title' => __( 'Enable Remote Login?', 'domainer' ),
+				'help'  => __( 'Provide cross-domain authentication for users belonging to multiple sites.', 'domainer' ),
+				'type'  => 'checkbox',
+			),
 		);
 
 		if ( is_network_admin() ) {

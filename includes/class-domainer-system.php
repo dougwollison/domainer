@@ -96,6 +96,10 @@ final class System extends Handler {
 			return;
 		}
 
+		if ( session_id() == '' ) {
+			session_start();
+		}
+
 		// Setup the domainer table alias
 		$wpdb->domainer = $wpdb->base_prefix . 'domainer';
 

@@ -37,12 +37,180 @@ final class Backend extends Handler {
 	protected static $implemented_hooks = array();
 
 	// =========================
+	// ! Utilities
+	// =========================
+
+	/**
+	 * Test if remote login related actions should proceed.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $session_key Optional. Additionally check if a $_SESSION key exists.
+	 */
+	protected static function should_do_remote_login( $session_key = null ) {
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return false;
+		}
+
+		// Skip if specified session key is present
+		if ( $session_key && ! isset( $_SESSION[ $session_key ] ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Generate a set of tokens.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string  $type The type of tokens to generate ('login', 'logout').
+	 * @param WP_User $user The user to generate tokens for.
+	 * @param array   $data Optional. The data to store the secret with.
+	 */
+	protected static function generate_tokens( $type, \WP_User $user, $data = array() ) {
+		global $blog_id;
+
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		$tokens = array();
+
+		// Loop through all sites the user belongs to
+		$sites = get_blogs_of_user( $user->ID );
+		foreach ( $sites as $site ) {
+			// Skip for current blog
+			if ( $site->userblog_id == $blog_id ) {
+				continue;
+			}
+
+			// Generate a unique key and token
+			$key = str_replace( '.', '', microtime( true ) );
+			$secret = wp_generate_password( 40, false, false );
+
+			switch_to_blog( $site->userblog_id );
+
+			// Store the data as a transient
+			$data['secret'] = wp_hash_password( $secret );
+			set_transient( "domainer-{$type}-" . sha1( $key ), $data, 30 );
+
+			restore_current_blog();
+
+			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
+		}
+
+		$_SESSION["domainer-{$type}-tokens"] = $tokens;
+	}
+
+	/**
+	 * Print a set of tokens.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $type The type of tokens to print ('login', 'logout').
+	 */
+	protected static function print_tokens( $type ) {
+		global $blog_id;
+
+		$action = "domainer-{$type}";
+		$key = "{$action}-tokens";
+
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login( $key ) ) {
+			return;
+		}
+
+		$urls = array();
+		foreach ( $_SESSION[ $key ] as $site => $token ) {
+			// Skip if for the current blog somehow
+			if ( $site == $blog_id ) {
+				continue;
+			}
+
+			switch_to_blog( $site );
+
+			$url = admin_url( 'admin-post.php' );
+			$url = add_query_arg( array(
+				'action' => $action,
+				'token' => $token,
+			), $url );
+
+			printf( '<script class="domainer-auth-url" data-url="%s"></script>', esc_attr( $url ) );
+
+			restore_current_blog();
+		}
+
+		unset( $_SESSION[ $key ] );
+	}
+
+	/**
+	 * Verify a token.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $type The type of token to verify ('login', 'logout').
+	 */
+	protected static function verify_token( $type ) {
+		// Fail if remote_login is not enabled
+		if ( ! Registry::get( 'remote_login' ) ) {
+			header( 'HTTP/1.1 403 Forbidden' );
+			die( "/* remote $type disabled */" );
+		}
+
+		// Fail if no token is present
+		if ( ! isset( $_REQUEST['token'] ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( "/* remote $type token missing */" );
+		}
+
+		// Get the key/secret parts
+		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
+		$key = sha1( $key );
+
+		$transient = "domainer-$type-$key";
+		$data = get_transient( $transient );
+		delete_transient( $transient );
+
+		// Fail if the data could not be found
+		if ( ! $data ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( "/* remote $type data not found */" );
+		}
+
+		// If specified, fail if the user does not exist or does not belong to this site
+		if ( isset( $data['user'] ) && ( ! get_userdata( $data['user'] ) || ! is_user_member_of_blog( $data['user'] ) ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( "/* user not authorized for " . COOKIE_DOMAIN . " */" );
+		}
+
+		// Fail if the secret is missing
+		if ( ! isset( $data['secret'] ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( "/* remote $type secret not found */" );
+		}
+
+		// Fail if the secret doesn't pass
+		if ( ! wp_check_password( $secret, $data['secret'] ) ) {
+			header( 'HTTP/1.1 401 Unauthorized' );
+			die( "/* $type token invalid */" );
+		}
+
+		return $data;
+	}
+
+	// =========================
 	// ! Hook Registration
 	// =========================
 
 	/**
 	 * Register hooks.
 	 *
+	 * @since 1.1.0 Added remote login/logout hooks.
 	 * @since 1.0.0
 	 */
 	public static function register_hooks() {
@@ -57,6 +225,10 @@ final class Backend extends Handler {
 		// Plugin information
 		self::add_hook( 'in_plugin_update_message-' . plugin_basename( DOMAINER_PLUGIN_FILE ), 'update_notice' );
 
+		// Script/Style Enqueues
+		self::add_hook( 'login_enqueue_scripts', 'enqueue_assets', 10, 0 );
+		self::add_hook( 'admin_enqueue_scripts', 'enqueue_assets', 10, 0 );
+
 		// Admin interface changes
 		self::add_hook( 'wpmu_blogs_columns', 'add_domains_column', 15, 1 );
 		self::add_hook( 'manage_sites_custom_column', 'do_domains_column', 10, 2 );
@@ -65,6 +237,24 @@ final class Backend extends Handler {
 		self::add_hook( 'network_admin_notices', 'print_sunrise_result', 10, 0 );
 		self::add_hook( 'network_admin_notices', 'print_sunrise_notice', 10, 0 );
 		self::add_hook( 'admin_post_domainer-install', 'attempt_sunrise_install', 10, 0 );
+
+		// Shared remote login/logout handling
+		self::add_hook( 'admin_notices', 'print_message_template', 10, 0 );
+		self::add_hook( 'login_header', 'print_message_template', 10, 0 );
+
+		// Remote login handling
+		self::add_hook( 'wp_login', 'generate_login_tokens', 10, 2 );
+		self::add_hook( 'admin_head', 'print_login_links', 10, 0 );
+		self::add_hook( 'admin_post_domainer-login', 'verify_login_token', 10, 0 );
+		self::add_hook( 'admin_post_nopriv_domainer-login', 'verify_login_token', 10, 0 );
+		self::add_hook( 'admin_notices', 'print_login_notice', 10, 0 );
+
+		// Remote logout handling
+		self::add_hook( 'login_form_logout', 'generate_logout_tokens', 10, 0 );
+		self::add_hook( 'login_head', 'print_logout_links', 10, 0 );
+		self::add_hook( 'admin_post_domainer-logout', 'verify_logout_token', 10, 0 );
+		self::add_hook( 'admin_post_nopriv_domainer-logout', 'verify_logout_token', 10, 0 );
+		self::add_hook( 'login_header', 'print_logout_notice', 10, 0 );
 	}
 
 	// =========================
@@ -111,6 +301,46 @@ final class Backend extends Handler {
 		if ( $notice ) {
 			echo apply_filters( 'the_content', $notice );
 		}
+	}
+
+	// =========================
+	// ! Script/Style Enqueues
+	// =========================
+
+	/**
+	 * Enqueue necessary styles and scripts.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function enqueue_assets() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		// Notice styling for admin/login screens
+		wp_enqueue_style( 'domainer-notice', plugins_url( 'css/notice.css', DOMAINER_PLUGIN_FILE ), array(), DOMAINER_PLUGIN_VERSION, 'screen' );
+
+		// Login/Logout URL handling on admin/login screens
+		wp_enqueue_script( 'domainer-authenticate', plugins_url( 'js/authenticate.js', DOMAINER_PLUGIN_FILE ), array( 'jquery' ), DOMAINER_PLUGIN_VERSION, 'in footer' );
+
+		// Determine which phrasing to use based on context
+		if ( current_action() == 'login_enqueue_scripts' ) {
+			$waiting = __( 'Attempting remote logout on %s...', 'domainer' );
+			$success = __( 'Remote logout on %s successful.', 'domainer' );
+			$error = __( 'Remote logout on %s failed.', 'domainer' );
+		} else {
+			$waiting = __( 'Attempting remote login on %s...', 'domainer' );
+			$success = __( 'Remote login on %s successful.', 'domainer' );
+			$error = __( 'Remote login on %s failed.', 'domainer' );
+		}
+
+		// Localization of authenticate script
+		wp_localize_script( 'domainer-authenticate', 'domainerL10n', array(
+			'waiting' => $waiting,
+			'success' => $success,
+			'error' => $error,
+		) );
 	}
 
 	// =========================
@@ -256,5 +486,133 @@ final class Backend extends Handler {
 
 		wp_redirect( wp_get_referer() );
 		exit;
+	}
+
+	// =========================
+	// ! Login/Logout Handling
+	// =========================
+
+	/**
+	 * Print the template for notice messages.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_message_template() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		?>
+		<script type="text/template" id="domainer_message_template">
+			<p><span class="icon dashicons"></span> <span class="text"></span></p>
+		</script>
+		<?php
+	}
+
+	// =========================
+	// ! Remote Login Handling
+	// =========================
+
+	/**
+	 * Generate login tokens for all sites the user belongs to.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string   $username The user's login name.
+	 * @param \WP_User $user     The user object.
+	 */
+	public static function generate_login_tokens( $username, $user ) {
+		self::generate_tokens( 'login', $user, array(
+			'user' => $user->ID,
+			'remember' => isset( $_POST['rememberme'] ) && $_POST['rememberme'],
+		) );
+	}
+
+	/**
+	 * Print <script> tags for login links.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_login_links() {
+		self::print_tokens( 'login' );
+	}
+
+	/**
+	 * Print an empty notice box for the remote login results.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_login_notice() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		echo '<div class="notice is-dismissible domainer-notice"></div>';
+	}
+
+	/**
+	 * Verify the login token and authenticate the user.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function verify_login_token() {
+		$data = self::verify_token( 'login' );
+
+		wp_set_auth_cookie( $data['user'], $data['remember'] );
+		header( 'HTTP/1.1 200 OK' );
+		die( '/* logged in on ' . COOKIE_DOMAIN . ' */' );
+	}
+
+	// =========================
+	// ! Remote Logout Handling
+	// =========================
+
+	/**
+	 * Generate logout tokens for all sites the user belongs to.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function generate_logout_tokens() {
+		$user = wp_get_current_user();
+		self::generate_tokens( 'logout', $user );
+	}
+
+	/**
+	 * Print <script> tags for logout links.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_logout_links() {
+		self::print_tokens( 'logout' );
+	}
+
+	/**
+	 * Print an empty notice box for the remote logout results.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_logout_notice() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		echo '<div class="message domainer-notice"></div>';
+	}
+
+	/**
+	 * Verify the logout token and end the users session.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function verify_logout_token() {
+		self::verify_token( 'logout' );
+
+		// Logout the user
+		wp_logout();
+		header( 'HTTP/1.1 200 OK' );
+		die( '/* logged out on ' . COOKIE_DOMAIN . ' */' );
 	}
 }
