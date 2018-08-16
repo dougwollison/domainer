@@ -313,7 +313,12 @@ final class Backend extends Handler {
 	 * @since 1.1.0
 	 */
 	public static function enqueue_assets() {
-		// Check if we should proceed
+		// General network admin styling
+		if ( is_network_admin() ) {
+			wp_enqueue_style( 'domainer-admin', plugins_url( 'css/admin.css', DOMAINER_PLUGIN_FILE ), array(), DOMAINER_PLUGIN_VERSION, 'screen' );
+		}
+
+		// Check if we should proceed with Remote Login related assets
 		if ( ! self::should_do_remote_login() ) {
 			return;
 		}
@@ -364,6 +369,7 @@ final class Backend extends Handler {
 	/**
 	 * Print the content of the domains column.
 	 *
+	 * @since 1.2.0 Also order domains by type AND name
 	 * @since 1.0.0
 	 *
 	 * @global \wpdb $wpdb The database abstraction class instance.
@@ -379,15 +385,21 @@ final class Backend extends Handler {
 			return;
 		}
 
-		// Get all domains, ordered by type (i.e. primary first)
-		$domains = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->domainer WHERE blog_id = %d ORDER BY FIELD( type, 'primary', 'alias', 'redirect' )", $blog_id ) );
+		// Get all domains, ordered by type (i.e. primary first), then name
+		$domains = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->domainer WHERE blog_id = %d ORDER BY FIELD( type, 'primary', 'alias', 'redirect' ), name", $blog_id ) );
 
+		// Get the labels for the domain types
+		$types = Documenter::domain_type_names();
+
+		$items = array();
 		if ( $domains ) {
 			foreach ( $domains as $domain ) {
 				$domain = new Domain( $domain );
-				printf( '<a href="%1$s%2$s" target="_blank">%2$s</a> (%3$s) <br />', is_ssl() ? 'https://' : 'http://', $domain->fullname(), $domain->type );
+				$items[] = sprintf( '<a href="%1$s%2$s" target="_blank" class="domain-%3$s">%2$s</a> (%4$s)', is_ssl() ? 'https://' : 'http://', $domain->fullname(), $domain->type, $types[ $domain->type ] );
 			}
 		}
+
+		echo implode( ' <br />', $items );
 	}
 
 	// =========================
