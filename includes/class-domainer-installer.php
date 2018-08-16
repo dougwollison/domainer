@@ -228,35 +228,41 @@ final class Installer extends Handler {
 	 * @since 1.0.0
 	 */
 	public static function install_sunrise() {
-		$sunrise = WP_CONTENT_DIR . '/sunrise.php';
+		$sunrise_target = WP_CONTENT_DIR . '/sunrise.php';
+		$sunrise_source = DOMAINER_PLUGIN_DIR . '/sunrise.php';
 
-		// Abort if Sunrise drop-in exists
-		if ( file_exists( $sunrise ) ) {
+		// Abort if Sunrise drop-in exists and is not the domainer one.
+		if ( file_exists( $sunrise_target ) && ! defined( 'DOMAINER_LOADED' ) ) {
 			// Log the error
 			set_transient( 'domainer_sunrise_install', array(
 				'success' => false,
-				'message' => sprintf( __( 'The <code>%s</code> file already exists. It will need to be replaced/amended manually.', 'domainer' ), 'sunrise.php' ),
+				'message' => sprintf( __( 'The <code>%s</code> drop-in already exists. It will need to be replaced/amended manually.', 'domainer' ), 'sunrise.php' ),
 			), 30 );
 			return;
 		}
 
 		// Abort if unable to write to the file
-		if ( ! is_writable( WP_CONTENT_DIR ) ) {
+		if ( ! is_writable( WP_CONTENT_DIR ) || ( file_exists( $sunrise_target ) && ! is_writable( $sunrise_target ) ) ) {
 			// Log the error
 			set_transient( 'domainer_sunrise_install', array(
 				'success' => false,
-				'message' => sprintf( __( 'The <code>%1$s</code> directory is not writable. You must install <code>%2$s</code> manually.', 'domainer' ), 'wp-content', 'sunrise.php' ),
+				'message' => sprintf( __( 'Unable to install the <code>%1$s</code> drop-in to the <code>%2$s</code> directory. Please install it manually.', 'domainer' ), 'sunrise.php', 'wp-content' ),
 			), 30 );
 			return;
 		}
 
+		// Skip if the file exists and matches our internal copy
+		if ( file_exists( $sunrise_target ) && md5_file( $sunrise_source ) === md5_file( $sunrise_target ) ) {
+			return;
+		}
+
 		// Copy the sunrise file over
-		copy( DOMAINER_PLUGIN_DIR . '/sunrise.php', $sunrise );
+		copy( $sunrise_source, $sunrise_target );
 
 		// Log the result
 		set_transient( 'domainer_sunrise_install', array(
 			'success' => true,
-			'message' => sprintf( __( 'Successfully installed the <code>%1$s</code> file.', 'domainer' ), 'sunrise.php', 'wp-content' ),
+			'message' => sprintf( __( 'Successfully installed/updated the <code>%1$s</code> drop-in.', 'domainer' ), 'sunrise.php' ),
 		), 30 );
 	}
 
@@ -339,21 +345,23 @@ final class Installer extends Handler {
 	public static function upgrade() {
 		global $wpdb;
 
-		// Abort if the site is using the latest version
-		if ( version_compare( get_site_option( 'domainer_database_version', '0.0.0' ), DOMAINER_DB_VERSION, '>=' ) ) {
-			return false;
+		// If the database version is out of date (or gone), install/update the options and tables
+		if ( version_compare( get_site_option( 'domainer_database_version', '0.0.0' ), DOMAINER_DB_VERSION, '<' ) ) {
+			self::install_options();
+			self::install_tables();
+
+			// Update the current database version
+			update_site_option( 'domainer_database_version', DOMAINER_DB_VERSION );
 		}
 
-		// Otherwise just install the options/tables
-		self::install_options();
-		self::install_tables();
+		// If the sunrise version is out of date (or gone), install/update the drop-in
+		if ( version_compare( get_site_option( 'domainer_sunrise_version', '0.0.0' ), DOMAINER_SUNRISE_VERSION, '<' ) ) {
+			self::install_sunrise();
+			self::activate_sunrise();
 
-		// Also attempt to install/activate Sunrise
-		self::install_sunrise();
-		self::activate_sunrise();
-
-		// Update the current database version
-		update_site_option( 'domainer_database_version', DOMAINER_DB_VERSION );
+			// Update the current database version
+			update_site_option( 'domainer_sunrise_version', DOMAINER_SUNRISE_VERSION );
+		}
 
 		return true;
 	}

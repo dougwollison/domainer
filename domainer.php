@@ -53,6 +53,15 @@ define( 'DOMAINER_PLUGIN_VERSION', '1.1.0' );
 define( 'DOMAINER_DB_VERSION', '1.0.0' );
 
 /**
+ * Identifies the current sunrise version.
+ *
+ * @since 1.0.0
+ *
+ * @var string
+ */
+define( 'DOMAINER_SUNRISE_VERSION', '1.2.0' );
+
+/**
  * Identifies if rewriting has occured.
  *
  * @since 1.0.0
