@@ -447,6 +447,7 @@ final class Manager extends Handler {
 	/**
 	 * Output for the domains manager.
 	 *
+	 * @since 1.2.0 Order domains by site, type, then name.
 	 * @since 1.0.0
 	 *
 	 * @global $plugin_page The slug of the current admin page.
@@ -486,7 +487,7 @@ final class Manager extends Handler {
 				<?php
 				$where = is_network_admin() ? '' : $wpdb->prepare( "WHERE blog_id = %d", $blog_id );
 
-				$domains = $wpdb->get_results( "SELECT * FROM $wpdb->domainer $where", ARRAY_A );
+				$domains = $wpdb->get_results( "SELECT * FROM $wpdb->domainer $where ORDER BY blog_id ASC, FIELD( type, 'primary', 'alias', 'redirect' ), name ASC", ARRAY_A );
 				$domains = array_map( __NAMESPACE__ . '\Domain::create_instance', $domains );
 
 				$domain_types = Documenter::domain_type_names();

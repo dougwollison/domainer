@@ -33,9 +33,7 @@ In order to reduce redirects while navigating the site, Domainer will replaced a
 
 If you find instances of the domain not being replaced, such as in content filtered by 3rd party plugins, you can patch it with this function:
 
-```
-add_filter( 'my_filter', 'domainer_rewrite_url' );
-```
+	add_filter( 'my_filter', 'domainer_rewrite_url' );
 
 The function can also take a domain or array of domains to replace, as well as a specific domain to replace with.
 

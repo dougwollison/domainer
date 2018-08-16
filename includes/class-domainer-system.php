@@ -366,9 +366,15 @@ final class System extends Handler {
 	public static function rewrite_current_blog_object( $blog_id ) {
 		global $current_blog, $current_site;
 
-		// Get the new blog and primary domain for it
+		// Get the new blog
 		$new_blog = \WP_Site::get_instance( $blog_id );
-		$domain = Registry::get_primary_domain( $blog_id );
+
+		// Get the requested domain if on the original blog, otherwise the primary
+		if ( defined( 'DOMAINER_REQUESTED_BLOG' ) && DOMAINER_REQUESTED_BLOG === $blog_id ) {
+			$domain = Registry::get_domain( DOMAINER_REQUESTED_DOMAIN );
+		} else {
+			$domain = Registry::get_primary_domain( $blog_id );
+		}
 
 		if ( $new_blog ) {
 			// Replace current blog

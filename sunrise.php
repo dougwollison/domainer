@@ -46,12 +46,16 @@ function sunrise() {
 	// See if a matching site ID can be found for the provided HOST name
 	$match = $wpdb->get_row( $wpdb->prepare( "SELECT id, blog_id FROM $wpdb->domainer WHERE name = %s LIMIT 1", $find ) );
 	if ( $match ) {
+		// Get the domain/blog IDs, as integers
+		$domain_id = intval( $match->id );
+		$domain_blog = intval( $match->blog_id );
+
 		// Ensure a matching site is found
-		if ( $current_blog = \WP_Site::get_instance( $match->blog_id ) ) {
+		if ( $current_blog = \WP_Site::get_instance( $domain_blog ) ) {
 			// Store the true domain/path, along with the requested domain's ID
 			$current_blog->true_domain = $current_blog->domain;
 			$current_blog->true_path = $current_blog->path;
-			$current_blog->domain_id = $match->id;
+			$current_blog->domain_id = $domain_id;
 
 			// Rewrite the domain/path
 			$current_blog->domain = $domain;
@@ -69,6 +73,10 @@ function sunrise() {
 
 			// Flag that the requested domain used WWW
 			define( 'DOMAINER_USING_WWW', strpos( $domain, 'www.' ) === 0 );
+
+			// Store the ID of the requested domain and blog
+			define( 'DOMAINER_REQUESTED_DOMAIN', $domain_id );
+			define( 'DOMAINER_REQUESTED_BLOG', $domain_blog );
 
 			// Set the cookie domain constant
 			define( 'COOKIE_DOMAIN', $domain );
