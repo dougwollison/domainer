@@ -2,8 +2,8 @@
 Contributors: dougwollison
 Tags: domain mapping, domain management, multisite
 Requires at least: 4.0
-Tested up to: 4.7.4
-Stable tag: 1.0.1
+Tested up to: 4.8.9
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,7 +53,7 @@ The function can also take a domain or array of domains to replace, as well as a
 **Details on each release can be found [on the GitHub releases page](https://github.com/dougwollison/domainer/releases) for this project.**
 
 = 1.1.0 =
-Fixed handling of URLs when switch_to_blog was involved.
+Added remote login capabilities, fixed handling of URLs when using switch_to_blog.
 
 = 1.0.1 =
 Fixed bug with deleting domains and certain redirect URLs.
