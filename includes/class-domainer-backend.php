@@ -41,6 +41,28 @@ final class Backend extends Handler {
 	// =========================
 
 	/**
+	 * Test if remote login related actions should proceed.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $session_key Optional. Additionally check if a $_SESSION key exists.
+	 */
+	protected static function should_do_remote_login( $session_key = null ) {
+		// Skip if remote_login is not enabled
+		// or if redirect_backend is disabled (useless if so)
+		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+			return false;
+		}
+
+		// Skip if specified session key is present
+		if ( $session_key && ! isset( $_SESSION[ $session_key ] ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Generate a set of tokens.
 	 *
 	 * @since 1.1.0
@@ -52,9 +74,8 @@ final class Backend extends Handler {
 	protected static function generate_tokens( $type, \WP_User $user, $data = array() ) {
 		global $blog_id;
 
-		// Skip if remote_login is not enabled
-		// or if redirect_backend is disabled (useless if so)
-		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
 			return;
 		}
 
@@ -99,17 +120,12 @@ final class Backend extends Handler {
 		$action = "domainer-{$type}";
 		$key = "{$action}-tokens";
 
-		// Skip if remote_login is not enabled
-		// or if redirect_backend is disabled (useless if so)
-		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login( $key ) ) {
 			return;
 		}
 
-		// Skip if no tokens are present in the session
-		if ( ! isset( $_SESSION[ $key ] ) ) {
-			return;
-		}
-
+		$urls = array();
 		foreach ( $_SESSION[ $key ] as $site => $token ) {
 			// Skip if for the current blog somehow
 			if ( $site == $blog_id ) {
@@ -118,11 +134,15 @@ final class Backend extends Handler {
 
 			switch_to_blog( $site );
 
-			$url = admin_url( "admin-post.php?action={$action}&token={$token}" );
+			$url = admin_url( 'admin-post.php' );
+			$url = add_query_arg( array(
+				'action' => $action,
+				'token' => $token,
+			), $url );
+
+			printf( '<script class="domainer-auth-url" data-url="%s"></script>', esc_attr( $url ) );
 
 			restore_current_blog();
-
-			echo "<script src='{$url}'></script>";
 		}
 
 		unset( $_SESSION[ $key ] );
@@ -205,6 +225,10 @@ final class Backend extends Handler {
 		// Plugin information
 		self::add_hook( 'in_plugin_update_message-' . plugin_basename( DOMAINER_PLUGIN_FILE ), 'update_notice' );
 
+		// Script/Style Enqueues
+		self::add_hook( 'login_enqueue_scripts', 'enqueue_assets', 10, 0 );
+		self::add_hook( 'admin_enqueue_scripts', 'enqueue_assets', 10, 0 );
+
 		// Admin interface changes
 		self::add_hook( 'wpmu_blogs_columns', 'add_domains_column', 15, 1 );
 		self::add_hook( 'manage_sites_custom_column', 'do_domains_column', 10, 2 );
@@ -214,17 +238,23 @@ final class Backend extends Handler {
 		self::add_hook( 'network_admin_notices', 'print_sunrise_notice', 10, 0 );
 		self::add_hook( 'admin_post_domainer-install', 'attempt_sunrise_install', 10, 0 );
 
+		// Shared remote login/logout handling
+		self::add_hook( 'admin_notices', 'print_message_template', 10, 0 );
+		self::add_hook( 'login_header', 'print_message_template', 10, 0 );
+
 		// Remote login handling
 		self::add_hook( 'wp_login', 'generate_login_tokens', 10, 2 );
 		self::add_hook( 'admin_head', 'print_login_links', 10, 0 );
 		self::add_hook( 'admin_post_domainer-login', 'verify_login_token', 10, 0 );
 		self::add_hook( 'admin_post_nopriv_domainer-login', 'verify_login_token', 10, 0 );
+		self::add_hook( 'admin_notices', 'print_login_notice', 10, 0 );
 
 		// Remote logout handling
 		self::add_hook( 'login_form_logout', 'generate_logout_tokens', 10, 0 );
 		self::add_hook( 'login_head', 'print_logout_links', 10, 0 );
 		self::add_hook( 'admin_post_domainer-logout', 'verify_logout_token', 10, 0 );
 		self::add_hook( 'admin_post_nopriv_domainer-logout', 'verify_logout_token', 10, 0 );
+		self::add_hook( 'login_header', 'print_logout_notice', 10, 0 );
 	}
 
 	// =========================
@@ -271,6 +301,46 @@ final class Backend extends Handler {
 		if ( $notice ) {
 			echo apply_filters( 'the_content', $notice );
 		}
+	}
+
+	// =========================
+	// ! Script/Style Enqueues
+	// =========================
+
+	/**
+	 * Enqueue necessary styles and scripts.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function enqueue_assets() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		// Notice styling for admin/login screens
+		wp_enqueue_style( 'domainer-notice', plugins_url( 'css/notice.css', DOMAINER_PLUGIN_FILE ), array(), DOMAINER_PLUGIN_VERSION, 'screen' );
+
+		// Login/Logout URL handling on admin/login screens
+		wp_enqueue_script( 'domainer-authenticate', plugins_url( 'js/authenticate.js', DOMAINER_PLUGIN_FILE ), array( 'jquery' ), DOMAINER_PLUGIN_VERSION, 'in footer' );
+
+		// Determine which phrasing to use based on context
+		if ( current_action() == 'login_enqueue_scripts' ) {
+			$waiting = __( 'Attempting remote logout on %s...', 'domainer' );
+			$success = __( 'Remote logout on %s successful.', 'domainer' );
+			$error = __( 'Remote logout on %s failed.', 'domainer' );
+		} else {
+			$waiting = __( 'Attempting remote login on %s...', 'domainer' );
+			$success = __( 'Remote login on %s successful.', 'domainer' );
+			$error = __( 'Remote login on %s failed.', 'domainer' );
+		}
+
+		// Localization of authenticate script
+		wp_localize_script( 'domainer-authenticate', 'domainerL10n', array(
+			'waiting' => $waiting,
+			'success' => $success,
+			'error' => $error,
+		) );
 	}
 
 	// =========================
@@ -419,6 +489,28 @@ final class Backend extends Handler {
 	}
 
 	// =========================
+	// ! Login/Logout Handling
+	// =========================
+
+	/**
+	 * Print the template for notice messages.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_message_template() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		?>
+		<script type="text/template" id="domainer_message_template">
+			<p><span class="icon dashicons"></span> <span class="text"></span></p>
+		</script>
+		<?php
+	}
+
+	// =========================
 	// ! Remote Login Handling
 	// =========================
 
@@ -444,6 +536,20 @@ final class Backend extends Handler {
 	 */
 	public static function print_login_links() {
 		self::print_tokens( 'login' );
+	}
+
+	/**
+	 * Print an empty notice box for the remote login results.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_login_notice() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		echo '<div class="notice is-dismissible domainer-notice"></div>';
 	}
 
 	/**
@@ -480,6 +586,20 @@ final class Backend extends Handler {
 	 */
 	public static function print_logout_links() {
 		self::print_tokens( 'logout' );
+	}
+
+	/**
+	 * Print an empty notice box for the remote logout results.
+	 *
+	 * @since 1.1.0
+	 */
+	public static function print_logout_notice() {
+		// Check if we should proceed
+		if ( ! self::should_do_remote_login() ) {
+			return;
+		}
+
+		echo '<div class="message domainer-notice"></div>';
 	}
 
 	/**
