@@ -53,7 +53,7 @@ The function can also take a domain or array of domains to replace, as well as a
 **Details on each release can be found [on the GitHub releases page](https://github.com/dougwollison/domainer/releases) for this project.**
 
 = 1.1.0 =
-Added remote login capabilities, fixed handling of URLs when using switch_to_blog.
+Remote login capabilities, blog switching and site selecting fixes.
 
 = 1.0.1 =
 Fixed bug with deleting domains and certain redirect URLs.

@@ -314,10 +314,13 @@ final class Manager extends Handler {
 	/**
 	 * Fields for the domain editor page.
 	 *
+	 * @since 1.1.0 Fixed get_sites() call to return ALL sites.
 	 * @since 1.0.0
 	 */
 	public static function setup_domain_fields() {
-		$sites = get_sites();
+		$sites = get_sites( array(
+			'number' => 0, // unlimited
+		) );
 		$site_options = array();
 		foreach ( $sites as $site ) {
 			$site_options[ $site->blog_id ] = $site->blogname;
