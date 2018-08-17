@@ -225,6 +225,7 @@ final class Installer extends Handler {
 	 * Rather than copy over the file, code to include
 	 * the plugin's copy will be included.
 	 *
+	 * @since 1.1.1 Modify to handle updating the sunrise file.
 	 * @since 1.0.0
 	 */
 	public static function install_sunrise() {
@@ -336,6 +337,7 @@ final class Installer extends Handler {
 	/**
 	 * Install/Upgrade the database tables, converting them if needed.
 	 *
+	 * @since 1.1.1 Rewrite to handle database/sunrise installing/upgrading separately.
 	 * @since 1.0.0
 	 *
 	 * @global \wpdb $wpdb The database abstraction class instance.
