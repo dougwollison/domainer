@@ -231,6 +231,11 @@ final class Installer extends Handler {
 		$sunrise_target = WP_CONTENT_DIR . '/sunrise.php';
 		$sunrise_source = DOMAINER_PLUGIN_DIR . '/sunrise.php';
 
+		// Skip if the file exists and matches our internal copy
+		if ( file_exists( $sunrise_target ) && md5_file( $sunrise_source ) === md5_file( $sunrise_target ) ) {
+			return;
+		}
+
 		// Abort if Sunrise drop-in exists and is not the domainer one.
 		if ( file_exists( $sunrise_target ) && ! defined( 'DOMAINER_LOADED' ) ) {
 			// Log the error
@@ -242,17 +247,12 @@ final class Installer extends Handler {
 		}
 
 		// Abort if unable to write to the file
-		if ( ! is_writable( WP_CONTENT_DIR ) || ( file_exists( $sunrise_target ) && ! is_writable( $sunrise_target ) ) ) {
+		if ( ( file_exists( $sunrise_target ) && ! is_writable( $sunrise_target ) ) || ! is_writable( WP_CONTENT_DIR ) ) {
 			// Log the error
 			set_transient( 'domainer_sunrise_install', array(
 				'success' => false,
 				'message' => sprintf( __( 'Unable to install the <code>%1$s</code> drop-in to the <code>%2$s</code> directory. Please install it manually.', 'domainer' ), 'sunrise.php', 'wp-content' ),
 			), 30 );
-			return;
-		}
-
-		// Skip if the file exists and matches our internal copy
-		if ( file_exists( $sunrise_target ) && md5_file( $sunrise_source ) === md5_file( $sunrise_target ) ) {
 			return;
 		}
 
