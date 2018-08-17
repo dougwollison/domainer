@@ -390,7 +390,7 @@ final class Backend extends Handler {
 	/**
 	 * Print the content of the domains column.
 	 *
-	 * @since 1.2.0 Also order domains by type AND name
+	 * @since 1.1.1 Also order domains by type AND name
 	 * @since 1.0.0
 	 *
 	 * @global \wpdb $wpdb The database abstraction class instance.

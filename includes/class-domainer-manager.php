@@ -421,7 +421,7 @@ final class Manager extends Handler {
 	/**
 	 * Output for the domains manager.
 	 *
-	 * @since 1.2.0 Order domains by site, type, then name.
+	 * @since 1.1.1 Order domains by site, type, then name.
 	 * @since 1.0.0
 	 *
 	 * @global $plugin_page The slug of the current admin page.
