@@ -41,6 +41,19 @@ final class Backend extends Handler {
 	// =========================
 
 	/**
+	 * Generate a semi-unique ID for the visitor.
+	 *
+	 * Based on their IP address and User Agent.
+	 *
+	 * @since 1.1.1
+	 *
+	 * @return string The SHA1 encoded visitor ID.
+	 */
+	protected static function visitor_id() {
+		return sha1( $_SERVER['REMOTE_ADDR'] . $_SERVER['HTTP_USER_AGENT'] . AUTH_SALT );
+	}
+
+	/**
 	 * Test if remote login related actions should proceed.
 	 *
 	 * @since 1.1.0
@@ -65,6 +78,7 @@ final class Backend extends Handler {
 	/**
 	 * Generate a set of tokens.
 	 *
+	 * @since 1.1.1 Now salts the secret with visitor_id() result.
 	 * @since 1.1.0
 	 *
 	 * @param string  $type The type of tokens to generate ('login', 'logout').
@@ -78,6 +92,9 @@ final class Backend extends Handler {
 		if ( ! self::should_do_remote_login() ) {
 			return;
 		}
+
+		// Get the visitor ID
+		$visitor_id = self::visitor_id();
 
 		$tokens = array();
 
@@ -96,7 +113,7 @@ final class Backend extends Handler {
 			switch_to_blog( $site->userblog_id );
 
 			// Store the data as a transient
-			$data['secret'] = wp_hash_password( $secret );
+			$data['secret'] = wp_hash_password( $secret . $visitor_id );
 			set_transient( "domainer-{$type}-" . sha1( $key ), $data, 30 );
 
 			restore_current_blog();
@@ -151,6 +168,7 @@ final class Backend extends Handler {
 	/**
 	 * Verify a token.
 	 *
+	 * @since 1.1.1 Now salts the secret with visitor_id() result.
 	 * @since 1.1.0
 	 *
 	 * @param string $type The type of token to verify ('login', 'logout').
@@ -167,6 +185,9 @@ final class Backend extends Handler {
 			header( 'HTTP/1.1 401 Unauthorized' );
 			die( "/* remote $type token missing */" );
 		}
+
+		// Get the visitor ID
+		$visitor_id = self::visitor_id();
 
 		// Get the key/secret parts
 		list( $key, $secret ) = explode( '-', $_REQUEST['token'] );
@@ -195,7 +216,7 @@ final class Backend extends Handler {
 		}
 
 		// Fail if the secret doesn't pass
-		if ( ! wp_check_password( $secret, $data['secret'] ) ) {
+		if ( ! wp_check_password( $secret . $visitor_id, $data['secret'] ) ) {
 			header( 'HTTP/1.1 401 Unauthorized' );
 			die( "/* $type token invalid */" );
 		}
