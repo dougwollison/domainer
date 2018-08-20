@@ -43,6 +43,7 @@ final class System extends Handler {
 	/**
 	 * Redirect using the appropriate status.
 	 *
+	 * @since 1.1.2 Improved $path_prefix handling.
 	 * @since 1.0.1 Fixed $path_prefix handling.
 	 * @since 1.0.0
 	 *
@@ -53,8 +54,14 @@ final class System extends Handler {
 		// Get the redirect status to use (301 vs 302)
 		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
 
+		// Remove the prefix from the path if present
+		$path = $_SERVER['REQUEST_URI'];
+		if ( strpos( $path, $path_prefix ) === 0 ) {
+			$path = substr( $path, strlen( $path_prefix ) );
+		}
+
 		// Build the rewritten URL
-		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain . '/' . ltrim( substr( $_SERVER['REQUEST_URI'], strlen( $path_prefix ) ), '/' );
+		$redirect_url = ( is_ssl() ? 'https://' : 'http://' ) . $domain . '/' . ltrim( $path, '/' );
 
 		// As a failsafe, abort if the domains match
 		if ( defined( 'DOMAINER_ORIGINAL_URL' ) && $redirect_url == DOMAINER_ORIGINAL_URL ) {
