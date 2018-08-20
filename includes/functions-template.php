@@ -13,6 +13,7 @@
 /**
  * Filter the content to replace the domain name.
  *
+ * @since 1.1.2 Use property_exists() to check if domain_id exists on blog object.
  * @since 1.0.0
  *
  * @global \WP_Site $current_blog The current site object.

@@ -213,6 +213,7 @@ final class System extends Handler {
 	/**
 	 * Redirect to the primary domain if applicable.
 	 *
+	 * @since 1.1.2 Use property_exists() to check if domain_id and true_path exist on blog object.
 	 * @since 1.0.0
 	 *
 	 * @global \WP_Site $current_blog The current site object.
@@ -247,10 +248,12 @@ final class System extends Handler {
 
 		// Find a primary domain for this site
 		if ( $domain = Registry::get_primary_domain( $current_blog->blog_id ) ) {
+			// Use the current path as the prefix, get the true one if it exists
 			$path = $current_blog->path;
 			if ( property_exists( $current_blog, 'true_path' ) ) {
 				$path = $current_blog->true_path;
 			}
+
 			self::redirect( $domain->fullname(), $path );
 		}
 	}
@@ -258,6 +261,7 @@ final class System extends Handler {
 	/**
 	 * Redirect to the domain with/out www if applicable.
 	 *
+	 * @since 1.1.2 Use property_exists() to check if domain_id exists on blog object.
 	 * @since 1.0.0
 	 *
 	 * @global \WP_Site $current_blog The current site object.
