@@ -49,7 +49,7 @@ final class System extends Handler {
 	 * @param string $domain      The domain and path.
 	 * @param string $path_prefix The path prefix to remove.
 	 */
-	public function redirect( $domain, $path_prefix = '' ) {
+	public static function redirect( $domain, $path_prefix = '' ) {
 		// Get the redirect status to use (301 vs 302)
 		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
 
