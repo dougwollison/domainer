@@ -236,7 +236,7 @@ final class System extends Handler {
 		}
 
 		// Get the domain if one was matched
-		if ( $current_blog->domain_id ) {
+		if ( property_exists( $current_blog, 'domain_id' ) ) {
 			$domain = Registry::get_domain( $current_blog->domain_id );
 
 			// If the domain is found and is not a redirect, skip
@@ -267,7 +267,7 @@ final class System extends Handler {
 		}
 
 		// Skip if unable to find the domain
-		if ( ! $current_blog->domain_id || ! ( $domain = Registry::get_domain( $current_blog->domain_id ) ) ) {
+		if ( ! property_exists( $current_blog, 'domain_id' ) || ! ( $domain = Registry::get_domain( $current_blog->domain_id ) ) ) {
 			return;
 		}
 
