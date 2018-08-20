@@ -247,7 +247,11 @@ final class System extends Handler {
 
 		// Find a primary domain for this site
 		if ( $domain = Registry::get_primary_domain( $current_blog->blog_id ) ) {
-			self::redirect( $domain->fullname(), $current_blog->path );
+			$path = $current_blog->path;
+			if ( property_exists( $current_blog, 'true_path' ) ) {
+				$path = $current_blog->true_path;
+			}
+			self::redirect( $domain->fullname(), $path );
 		}
 	}
 
