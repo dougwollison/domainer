@@ -265,6 +265,8 @@ final class Installer extends Handler {
 			'success' => true,
 			'message' => sprintf( __( 'Successfully installed/updated the <code>%1$s</code> drop-in.', 'domainer' ), 'sunrise.php' ),
 		), 30 );
+
+		define( 'DOMAINER_INSTALLED_SUNRISE' );
 	}
 
 	/**
@@ -328,6 +330,8 @@ final class Installer extends Handler {
 				'message' => sprintf( __( 'Unable to find a safe place to insert the <code>%s</code> definition. You must edit it manually.', 'domainer' ), 'SUNRISE' ),
 			), 30 );
 		}
+
+		define( 'DOMAINER_ACTIVATED_SUNRISE' );
 	}
 
 	// =========================

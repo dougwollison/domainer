@@ -458,8 +458,8 @@ final class Backend extends Handler {
 	 * @since 1.0.0
 	 */
 	public static function print_sunrise_notice() {
-		$installed = defined( 'DOMAINER_LOADED' );
-		$activated = defined( 'SUNRISE' );
+		$installed = defined( 'DOMAINER_LOADED' ) || defined( 'DOMAINER_INSTALLED_SUNRISE' );
+		$activated = defined( 'SUNRISE' ) || defined( 'DOMAINER_ACTIVATED_SUNRISE' );
 
 		// We're good, no notice needed
 		if ( $installed && $activated ) {
