@@ -121,7 +121,7 @@ final class Backend extends Handler {
 			$tokens[ $site->userblog_id ] = "{$key}-{$secret}";
 		}
 
-		$_SESSION["domainer-{$type}-tokens"] = $tokens;
+		$_SESSION[ "domainer-{$type}-tokens" ] = $tokens;
 	}
 
 	/**
