@@ -43,6 +43,7 @@ final class System extends Handler {
 	/**
 	 * Redirect using the appropriate status.
 	 *
+	 * @since 1.1.3 Apply trailingslashit to URI.
 	 * @since 1.1.2 Improved $path_prefix handling.
 	 * @since 1.0.1 Fixed $path_prefix handling.
 	 * @since 1.0.0

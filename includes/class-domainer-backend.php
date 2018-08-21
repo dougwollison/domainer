@@ -455,6 +455,7 @@ final class Backend extends Handler {
 	/**
 	 * Print sunrise install/activate prompt if needed.
 	 *
+	 * @since 1.1.3 Added checks for DOMAINER_*_SUNRISE flags.
 	 * @since 1.0.0
 	 */
 	public static function print_sunrise_notice() {

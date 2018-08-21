@@ -225,6 +225,7 @@ final class Installer extends Handler {
 	 * Rather than copy over the file, code to include
 	 * the plugin's copy will be included.
 	 *
+	 * @since 1.1.3 Added setting of DOMAINER_INSTALLED_SUNRISE flag.
 	 * @since 1.1.1 Modify to handle updating the sunrise file.
 	 * @since 1.0.0
 	 */
@@ -266,12 +267,13 @@ final class Installer extends Handler {
 			'message' => sprintf( __( 'Successfully installed/updated the <code>%1$s</code> drop-in.', 'domainer' ), 'sunrise.php' ),
 		), 30 );
 
-		define( 'DOMAINER_INSTALLED_SUNRISE' );
+		define( 'DOMAINER_INSTALLED_SUNRISE', true );
 	}
 
 	/**
 	 * Attempt to copy sunrise.php to /wp-content/
 	 *
+	 * @since 1.1.3 Added setting of DOMAINER_ACTIVATED_SUNRISE flag.
 	 * @since 1.0.0
 	 */
 	public static function activate_sunrise() {
@@ -331,7 +333,7 @@ final class Installer extends Handler {
 			), 30 );
 		}
 
-		define( 'DOMAINER_ACTIVATED_SUNRISE' );
+		define( 'DOMAINER_ACTIVATED_SUNRISE', true );
 	}
 
 	// =========================
