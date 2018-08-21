@@ -34,7 +34,7 @@ final class Backend extends Handler {
 	 *
 	 * @var array
 	 */
-	protected static $implemented_hooks = array();
+	private static $implemented_hooks = array();
 
 	// =========================
 	// ! Utilities
@@ -49,7 +49,7 @@ final class Backend extends Handler {
 	 *
 	 * @return string The SHA1 encoded visitor ID.
 	 */
-	protected static function visitor_id() {
+	private static function visitor_id() {
 		return sha1( $_SERVER['REMOTE_ADDR'] . $_SERVER['HTTP_USER_AGENT'] . AUTH_SALT );
 	}
 
@@ -60,7 +60,7 @@ final class Backend extends Handler {
 	 *
 	 * @param string $session_key Optional. Additionally check if a $_SESSION key exists.
 	 */
-	protected static function should_do_remote_login( $session_key = null ) {
+	private static function should_do_remote_login( $session_key = null ) {
 		// Skip if remote_login is not enabled
 		// or if redirect_backend is disabled (useless if so)
 		if ( ! Registry::get( 'remote_login' ) || ! Registry::get( 'redirect_backend' ) ) {
@@ -85,7 +85,7 @@ final class Backend extends Handler {
 	 * @param WP_User $user The user to generate tokens for.
 	 * @param array   $data Optional. The data to store the secret with.
 	 */
-	protected static function generate_tokens( $type, \WP_User $user, $data = array() ) {
+	private static function generate_tokens( $type, \WP_User $user, $data = array() ) {
 		global $blog_id;
 
 		// Check if we should proceed
@@ -131,7 +131,7 @@ final class Backend extends Handler {
 	 *
 	 * @param string $type The type of tokens to print ('login', 'logout').
 	 */
-	protected static function print_tokens( $type ) {
+	private static function print_tokens( $type ) {
 		global $blog_id;
 
 		$action = "domainer-{$type}";
@@ -173,7 +173,7 @@ final class Backend extends Handler {
 	 *
 	 * @param string $type The type of token to verify ('login', 'logout').
 	 */
-	protected static function verify_token( $type ) {
+	private static function verify_token( $type ) {
 		// Fail if remote_login is not enabled
 		if ( ! Registry::get( 'remote_login' ) ) {
 			header( 'HTTP/1.1 403 Forbidden' );

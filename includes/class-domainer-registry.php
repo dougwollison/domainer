@@ -33,7 +33,7 @@ final class Registry {
 	 *
 	 * @var bool
 	 */
-	protected static $__loaded = false;
+	private static $__loaded = false;
 
 	/**
 	 * The options storage array
@@ -44,7 +44,7 @@ final class Registry {
 	 *
 	 * @var array
 	 */
-	protected static $options = array();
+	private static $options = array();
 
 	/**
 	 * The site-specific option overrides.
@@ -55,7 +55,7 @@ final class Registry {
 	 *
 	 * @var array
 	 */
-	protected static $option_overrides = array();
+	private static $option_overrides = array();
 
 	/**
 	 * The options whitelist/defaults.
@@ -66,7 +66,7 @@ final class Registry {
 	 *
 	 * @var array
 	 */
-	protected static $options_whitelist = array(
+	private static $options_whitelist = array(
 		// - The permanent redirection option
 		'redirection_permanent' => false,
 
@@ -95,7 +95,7 @@ final class Registry {
 	 *
 	 * @var array
 	 */
-	protected static $overrides_whitelist = array(
+	private static $overrides_whitelist = array(
 		// - The permanent redirection option
 		'redirection_permanent' => false,
 
@@ -118,7 +118,7 @@ final class Registry {
 	 *
 	 * @var array
 	 */
-	protected static $options_deprecated = array();
+	private static $options_deprecated = array();
 
 	// =========================
 	// ! Property Accessing

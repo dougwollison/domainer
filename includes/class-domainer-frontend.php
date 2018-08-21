@@ -33,7 +33,7 @@ final class Frontend extends Handler {
 	 *
 	 * @var array
 	 */
-	protected static $implemented_hooks = array();
+	private static $implemented_hooks = array();
 
 	// =========================
 	// ! Hook Registration
