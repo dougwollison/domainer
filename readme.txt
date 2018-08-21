@@ -3,7 +3,7 @@ Contributors: dougwollison
 Tags: domain mapping, domain management, multisite
 Requires at least: 4.0
 Tested up to: 4.8.9
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,9 @@ The function can also take a domain or array of domains to replace, as well as a
 == Changelog ==
 
 **Details on each release can be found [on the GitHub releases page](https://github.com/dougwollison/domainer/releases) for this project.**
+
+= 1.1.3 =
+Fixed subdirectory rewrites, ironed out install process.
 
 = 1.1.2 =
 Fixed rewrite handling on subdirectory style network setups.
