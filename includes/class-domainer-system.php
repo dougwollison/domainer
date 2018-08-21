@@ -55,7 +55,7 @@ final class System extends Handler {
 		$status = Registry::get( 'redirection_permanent' ) ? 301 : 302;
 
 		// Remove the prefix from the path if present
-		$path = $_SERVER['REQUEST_URI'];
+		$path = trailingslashit( $_SERVER['REQUEST_URI'] );
 		if ( strpos( $path, $path_prefix ) === 0 ) {
 			$path = substr( $path, strlen( $path_prefix ) );
 		}
