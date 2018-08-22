@@ -57,7 +57,7 @@ final class System extends Handler {
 
 		// Remove the prefix from the path if present
 		$path = trailingslashit( $_SERVER['REQUEST_URI'] );
-		if ( strpos( $path, $path_prefix ) === 0 ) {
+		if ( $path_prefix && strpos( $path, $path_prefix ) === 0 ) {
 			$path = substr( $path, strlen( $path_prefix ) );
 		}
 
