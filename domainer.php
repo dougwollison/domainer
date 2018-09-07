@@ -10,6 +10,7 @@ Tags: domain mapping, domain management, multisite
 License: GPL2
 Text Domain: domainer
 Domain Path: /languages
+Network: true
 */
 
 // =========================
