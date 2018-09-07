@@ -147,6 +147,7 @@ final class System extends Handler {
 	/**
 	 * Register hooks.
 	 *
+	 * @since 1.1.4 Added content_url hook.
 	 * @since 1.1.0 Added switch_blog hook.
 	 * @since 1.0.0
 	 */
@@ -161,6 +162,7 @@ final class System extends Handler {
 			self::add_hook( 'option_siteurl', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'option_home', 'rewrite_domain_in_url', 0, 1 );
 
+			self::add_hook( 'content_url', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'plugins_url', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'theme_root_uri', 'rewrite_domain_in_url', 0, 1 );
 			self::add_hook( 'stylesheet_uri', 'rewrite_domain_in_url', 0, 1 );
