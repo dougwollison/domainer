@@ -240,6 +240,10 @@ final class Backend extends Handler {
 			return;
 		}
 
+		if ( session_id() == '' ) {
+			session_start();
+		}
+
 		// Setup stuff
 		self::add_hook( 'plugins_loaded', 'load_textdomain', 10, 0 );
 
