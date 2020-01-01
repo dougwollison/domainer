@@ -231,7 +231,7 @@ final class Backend extends Handler {
 	/**
 	 * Register hooks.
 	 *
-	 * @since 1.1.4 Rework session handling.
+	 * @since 1.2.0 Rework session handling.
 	 * @since 1.1.0 Added remote login/logout hooks.
 	 * @since 1.0.0
 	 */
@@ -666,7 +666,7 @@ final class Backend extends Handler {
 	/**
 	 * Start the session if not already started.
 	 *
-	 * @since 1.1.4
+	 * @since 1.2.0
 	 */
 	public static function start_session() {
 		// Don't start session for ajax requests
@@ -678,7 +678,7 @@ final class Backend extends Handler {
 	/**
 	 * If a session is active, write and close it.
 	 *
-	 * @since 1.1.4
+	 * @since 1.2.0
 	 */
 	public static function end_session() {
 		if ( session_status() == PHP_SESSION_ACTIVE ) {
