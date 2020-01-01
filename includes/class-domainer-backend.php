@@ -68,7 +68,7 @@ final class Backend extends Handler {
 		}
 
 		// Skip if specified session key is present
-		if ( $session_key && ! isset( $_SESSION[ $session_key ] ) ) {
+		if ( $session_key && ( ! isset( $_SESSION ) || ! isset( $_SESSION[ $session_key ] ) ) ) {
 			return false;
 		}
 
@@ -278,11 +278,13 @@ final class Backend extends Handler {
 		self::add_hook( 'admin_post_nopriv_domainer-logout', 'verify_logout_token', 10, 0 );
 		self::add_hook( 'login_header', 'print_logout_notice', 10, 0 );
 
-		// Session Handling
-		self::add_hook( 'login_init', 'start_session', 10, 0 );
-		self::add_hook( 'admin_init', 'start_session', 10, 0 );
-		self::add_hook( 'login_footer', 'end_session', 10, 0 );
-		self::add_hook( 'admin_footer', 'end_session', 10, 0 );
+		// Session Handling (if remote login is enabled)
+		if ( self::should_do_remote_login() ) {
+			self::add_hook( 'login_init', 'start_session', 10, 0 );
+			self::add_hook( 'admin_init', 'start_session', 10, 0 );
+			self::add_hook( 'login_footer', 'end_session', 10, 0 );
+			self::add_hook( 'admin_footer', 'end_session', 10, 0 );
+		}
 	}
 
 	// =========================
