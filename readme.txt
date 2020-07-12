@@ -2,8 +2,8 @@
 Contributors: dougwollison
 Tags: domain mapping, domain management, multisite
 Requires at least: 4.0
-Tested up to: 5.3.2
-Stable tag: 1.2.0
+Tested up to: 5.4.2
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,9 @@ The function can also take a domain or array of domains to replace, as well as a
 == Changelog ==
 
 **Details on each release can be found [on the GitHub releases page](https://github.com/dougwollison/domainer/releases) for this project.**
+
+= 1.2.1 =
+Improved UX and error handling of Sunrise install process.
 
 = 1.2.0 =
 Network Only now. Fixed session handling that was causing loopback requests to fail.
