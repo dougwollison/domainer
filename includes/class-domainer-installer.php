@@ -273,6 +273,7 @@ final class Installer extends Handler {
 	/**
 	 * Attempt to copy sunrise.php to /wp-content/
 	 *
+	 * @since 1.2.1 Added DOMAINER_INSTALLED_SUNRISE check.
 	 * @since 1.1.3 Added setting of DOMAINER_ACTIVATED_SUNRISE flag.
 	 * @since 1.0.0
 	 */

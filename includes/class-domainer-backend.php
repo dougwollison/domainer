@@ -464,6 +464,7 @@ final class Backend extends Handler {
 	/**
 	 * Print sunrise install/activate prompt if needed.
 	 *
+	 * @since 1.2.1 Added writable check on wp-content & wp-config.
 	 * @since 1.1.3 Added checks for DOMAINER_*_SUNRISE flags.
 	 * @since 1.0.0
 	 */
