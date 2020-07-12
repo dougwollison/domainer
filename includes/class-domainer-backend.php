@@ -495,7 +495,7 @@ final class Backend extends Handler {
 					<li><?php printf( __( 'Add <code>%1$s</code> to your site’s <code>%2$s</code> file.', 'domainer' ), "define('SUNRISE', true);", 'wp-config.php' ); ?></li>
 				<?php endif; ?>
 			</ol>
-			<?php if ( is_writable( WP_CONTENT_DIR . 'sunrise.php' ) && is_writable( ABSPATH . 'wp-config.php' ) ) : ?>
+			<?php if ( ( is_writable( WP_CONTENT_DIR ) || is_writable( WP_CONTENT_DIR . 'sunrise.php' ) ) && is_writable( ABSPATH . 'wp-config.php' ) ) : ?>
 				<p><?php printf( __( 'Domainer may be able to do this itself. <a href="%s">Click here</a> to give it a shot.', 'domainer' ), $url ); ?></p>
 			<?php endif; ?>
 		</div>
