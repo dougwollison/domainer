@@ -282,6 +282,16 @@ final class Installer extends Handler {
 			return;
 		}
 
+		// Abort if install of sunrise.php failed
+		if ( ! defined( 'DOMAINER_INSTALLED_SUNRISE' ) ) {
+			// Log the error
+			set_transient( 'domainer_sunrise_activate', array(
+				'success' => false,
+				'message' => sprintf( __( 'The <code>%s</code> file must be installed before <code>%s</code> can be modified.', 'domainer' ), 'sunrise.php', 'wp-config.php' ),
+			), 30 );
+			return;
+		}
+
 		// Find the wp-config file
 		$wp_config = ABSPATH . 'wp-config.php';
 		if ( ! file_exists( $wp_config ) ) {
