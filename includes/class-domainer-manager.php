@@ -323,6 +323,7 @@ final class Manager extends Handler {
 	/**
 	 * Fields for the domain editor page.
 	 *
+	 * @since 1.3.0 Sort $site_options by blogname.
 	 * @since 1.1.0 Fixed get_sites() call to return ALL sites.
 	 * @since 1.0.0
 	 */
@@ -330,10 +331,14 @@ final class Manager extends Handler {
 		$sites = get_sites( array(
 			'number' => 0, // unlimited
 		) );
-		$site_options = array();
+
+		$site_options = array( '' => '&mdash; Select &mdash;' );
 		foreach ( $sites as $site ) {
 			$site_options[ $site->blog_id ] = $site->blogname;
 		}
+
+		// Sort by value
+		asort( $site_options, SORT_NATURAL|SORT_FLAG_CASE );
 
 		/**
 		 * Domain Settings
