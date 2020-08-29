@@ -153,6 +153,7 @@ final class Manager extends Handler {
 	/**
 	 * Update a domain.
 	 *
+	 * @since 1.3.0 Add checks for name/blog_id being specified.
 	 * @since 1.0.0
 	 *
 	 * @global \wpdb $wpdb The database abstraction class instance.
@@ -168,6 +169,14 @@ final class Manager extends Handler {
 
 		$domain_id = intval( $_POST['domain_id'] );
 		$data = $_POST['domainer_domain'];
+
+		if ( empty( $data['name'] ) ) {
+			wp_die( __( 'You must specify a domain name.', 'domainer' ) );
+		}
+
+		if ( empty( $data['blog_id'] ) ) {
+			wp_die( __( 'You must specify a blog to assign this to.', 'domainer' ) );
+		}
 
 		if ( ! from_network_admin() ) {
 			$domain = Registry::get_domain( $domain_id );
