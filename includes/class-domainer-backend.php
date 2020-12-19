@@ -298,7 +298,7 @@ final class Backend extends Handler {
 	 */
 	public static function load_textdomain() {
 		// Load the textdomain
-		load_plugin_textdomain( 'domainer', false, dirname( DOMAINER_PLUGIN_FILE ) . '/languages' );
+		load_plugin_textdomain( 'domainer', false, dirname( plugin_basename( DOMAINER_PLUGIN_FILE ) ) . '/languages' );
 	}
 
 	// =========================
