@@ -31,7 +31,11 @@ function is_backend() {
 
 	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 		// AJAX request, check if the referrer is from wp-admin
-		return strpos( $_SERVER['HTTP_REFERER'], admin_url() ) === 0;
+		if (isset($_SERVER['HTTP_REFERER'])) {
+			return strpos( $_SERVER['HTTP_REFERER'], admin_url() ) === 0;
+		} else {
+			return null;
+		}
 	}
 
 	// Check if in the admin or otherwise the login/register page
